@@ -11,13 +11,13 @@
 		<Fog>
 			<FogFactor>0</FogFactor>
 			<FogThickness>0.5</FogThickness>
-			<FogColour r="0.8" g="0.8" b="0.898039"/>
+			<FogColour r="0.8" g="0.8" b="0.894118"/>
 		</Fog>
 		<Water>
 			<WaterBody>
 				<Type>ocean</Type>
-				<Colour r="0.298039" g="0.34902" b="0.698039"/>
-				<Tint r="0.278431" g="0.298039" b="0.588235"/>
+				<Colour r="0.294118" g="0.34902" b="0.694118"/>
+				<Tint r="0.27451" g="0.294118" b="0.584314"/>
 				<Height>20.2492</Height>
 				<Waviness>7.05078</Waviness>
 				<Murkiness>0.22168</Murkiness>
@@ -33,41 +33,33 @@
 		</Postproc>
 	</Environment>
 	<Camera>
-		<Position x="826.723" y="240.202" z="772.25"/>
-		<Rotation angle="-2.02241"/>
-		<Declination angle="0.566627"/>
+		<Position x="655.693" y="208.613" z="856.584"/>
+		<Rotation angle="-2.64605"/>
+		<Declination angle="0.610865"/>
 	</Camera>
 	<ScriptSettings><![CDATA[
 {
-  "Name": "Unnamed map",
+  "CircularMap": true,
   "Description": "Give an interesting description of your map.",
+  "Name": "Unnamed map",
   "PlayerData": [
     {
-      "Civ": "athen"
+      "Civ": "gaul",
+      "Colour": {
+        "b": 0,
+        "g": 128,
+        "r": 0
+      }
     },
     {
-      "Civ": "cart"
-    },
-    {
-      "Civ": "celt"
-    },
-    {
-      "Civ": "iber"
-    },
-    {
-      "Civ": "mace"
-    },
-    {
-      "Civ": "pers"
-    },
-    {
-      "Civ": "rome"
-    },
-    {
-      "Civ": "spart"
+      "Civ": "rome",
+      "Colour": {
+        "b": 20,
+        "g": 20,
+        "r": 150
+      }
     }
-  ],
-  "CircularMap": true
+  ]
 }
 ]]></ScriptSettings>
 	<Entities/>
