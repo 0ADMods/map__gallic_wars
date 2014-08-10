@@ -2,7 +2,7 @@
  * Note: Enemy attacks are both triggered on RangeTrigger, e.g. in the forest when Gauls want to gather food.
  *  And when the storyline reaches a certain point.  
  */
-var INTRUDER_PlAYER = 2;
+var INTRUDER_PLAYER = 2;
 var DEFENDER_PLAYER = 1;
 
 Trigger.prototype.storyline = {};
@@ -56,16 +56,19 @@ Trigger.prototype.messages["defend_village"] = function()
 Trigger.prototype.conditions = {};
 Trigger.prototype.conditions["counter_strike"] = function()
 {
+	var cmpPlayerMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_PlayerManager);
+	cmpPlayerMan.GetPlayer();
+	
 	// Count own units. If there aren't enough units, then abort.
-	 
-	 
-	// Count active enemy attacks. If there aren't enough 
+	
+
+	// Count active enemy attacks. If there are any active attacks, then no counter attack can be ordered.
+	if (this.activeEnemyAttacks > 0)
+		return false;
     
 
 	// 
 	return true;
-	var cmpPlayerMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_PlayerManager);
-	cmpPlayerMan.GetPlayer();
 	
 	
 }
@@ -78,7 +81,6 @@ var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger);
 Trigger.prototype.UNIT_COUNT_REQUIRED_FOR_COUNTER_ATTACK = 100;
 
 // STORY VARIABLES
-cmpTrigger.storyline = storyline;
 cmpTrigger.state = "init";
 cmpTrigger.activeEnemyAttacks = 0;
 
@@ -107,7 +109,7 @@ Trigger.prototype.startStoryline = function(data)
 Trigger.prototype.storylineMachine = function(state_options)
 {
 	
-	for each state_or_action in state_options
+	for each (var state_or_action in state_options)
 	{
 		// if (typeof state_or_action == 'string')
 		if (state_options[state_or_action] != undefined && state_options[state_or_action].length)
