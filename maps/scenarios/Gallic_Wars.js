@@ -123,6 +123,12 @@ Trigger.prototype.storylineMachine = function(state_options)
 			{
 				// enter the state:
 				this.state = state_or_action;
+				var message = this.messages[state_or_action];
+				if (message)
+					if (typeof message == 'string') 
+						TriggerHelper.PushGUINotification(DEFENDER_PLAYER, message);
+					else if (typeof message == 'object')
+						message();
 			   	storylineMachine(state_options[state_or_action]);
 			}
 		}
