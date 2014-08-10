@@ -11,11 +11,8 @@ storyline[DEFENDER_PLAYER] = {
 	"start": ["intro", "defend_village"], // <-- can be an action/function or a state. If it's a state, then the state's entry conditions are checked and the state entered if the conditions are met.
 	"defend_village": ["subquest_free_the_druide", "enemy_attack", "counter_strike"],
 	"subquest_free_the_druide": ["hurry_back_to_defend_village", "counter_strike"],
-	"hurry_back_to_defend_village": ["defend_village"],
-	"counter_strike": ["enterStateIfConditionsMet" ""]
-    "counter_strike_enterIfConditionsMet": function() {
-	    Engine.QueryInterface(SYSTEM_ENTITY, IID_Player)
-	}
+	"hurry_back_to_defend_village": ["print_hurry_back_messages", "defend_village"],
+	"counter_strike": ["hurry_back_to_defend_village", "victory"]
 
 };
 
@@ -27,41 +24,60 @@ storyline[INTRUDER_PLAYER] = {
 
 
 
-var conditions = {};
-conditions["counter_strike"] = function()
+
+//======================================================================================
+// MESSAGES
+//======================================================================================
+// When ever we enter a new state, we may want to generate a message. 
+Trigger.prototype.messages = {}; // story telling
+Trigger.prototype.messages["defend_village"] = function() 
 {
+	var cmpGUIInterface = Engine.QueryInterface(SYSTEM_ENTITY, IID_GuiInterface);
+	// Refer to this wiki article for more information about translation support for messages: http://trac.wildfiregames.com/wiki/Internationalization
+	cmpGUIInterface.PushNotification({
+		"players": [DEFENDER_PLAYER], 
+		"message": markForTranslation("Defend your village!"),
+		translateMessage: true
+	});
+}
+
+
+
+
+
+//======================================================================================
+// CONDITIONS
+//======================================================================================
+Trigger.prototype.conditions = {};
+Trigger.prototype.conditions["counter_strike"] = function()
+{
+	// Count own units. If there aren't enough units, then abort.
+	 
+	 
+	// Count active enemy attacks. If there aren't enough 
+    
+
+	// 
+	return true;
 	var cmpPlayerMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_PlayerManager);
 	cmpPlayerMan.GetPlayer();
+	
 	
 }
 
 
-// non-mutable => define at prototype
-Trigger.prototype.actions = actions;
-Trigger.prototype.initActions = function()
-{
-    
-	this.actions["intro"] = function()
-	{
-		this.DoAfterDelay(2000, "intro", {});
-	}
-	this.actions["intro"] = function()
-	{
-		this.DoAfterDelay(2000, "intro", {});
-	}
-
-}
 
 var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger); 
 	
 cmpTrigger.storyline = storyline;
 cmpTrigger.state = "init";
+cmpTrigger.activeEnemyAttacks = 0;
 
 cmpTrigger.RegisterTrigger("OnTreasureCollected", "TreasureCollected", { "enabled": true });
 
 cmpTrigger.DoAfterDelay(2000, "startStoryline", {});
 
-
+Trigger.prototype.UNIT_COUNT_REQUIRED_FOR_COUNTER_ATTACK = 100;
 
 
 
@@ -79,8 +95,6 @@ Trigger.prototype.startStoryline = function(data)
 // An option can be both a function or another state.
 Trigger.prototype.storylineMachine = function(state_options)
 {
-	var actions = this.actions;
-	var conditions = this.conditions;
 	
 	for each state_or_action in state_options
 	{
@@ -89,18 +103,17 @@ Trigger.prototype.storylineMachine = function(state_options)
 		{
 			// it's a state: 
 			// only enter the state when the conditions are met:
-			var condition = conditions[state_or_action]; 
+			var condition = this.conditions[state_or_action]; 
 			if (condition && typeof condition == 'object')
 			{	
 				if (condition())
+				{
+					this.state = state_or_action;
 			    	storylineMachine(state_options[state_or_action]);
+				}
 			}
 		}
-		else if (actions[state_or_action] && typeof actions[state_or_action] == 'object')
-		{
-			actions[state_or_action]();
-		}
-		else if (this[state_or_action])
+		else if (this[state_or_action] && typeof this[state_or_action] == 'object')
 		{
 			this.DoAfterDelay(1000, state_or_action, {});
 		}
