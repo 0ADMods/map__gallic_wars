@@ -116,10 +116,7 @@ Trigger.prototype.storylineMachine = function(state_options)
 			// Only enter the state when the conditions are met:
 			// By default, i.e. if no condition function is specified, allow to enter the state!
 			var condition = this.conditions[state_or_action]; 
-			if (!condition || typeof condition != 'object' || !condition())
-			{	
-			}
-			else 
+			if (!condition || typeof condition != 'object' || condition())
 			{
 				// enter the state:
 				this.state = state_or_action;
