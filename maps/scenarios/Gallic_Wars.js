@@ -221,7 +221,7 @@ Trigger.prototype.storylineMachine = function(state_options)
 			}
 		}
 		// Is this a function (in this case more specific: a trigger action)?
-		else if (this[state_or_action] && typeof this[state_or_action] == 'object')
+		else if (this[state_or_action])// && typeof this[state_or_action] == 'object')
 		{
 			warn('Action: ' + state_or_action);
 			state_or_action();
