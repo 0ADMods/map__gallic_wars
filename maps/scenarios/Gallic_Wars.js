@@ -1,11 +1,12 @@
-
+/**
+ * Note: Enemy attacks are both triggered on RangeTrigger, e.g. in the forest when Gauls want to gather food.
+ *  And when the storyline reaches a certain point.  
+ */
 var INTRUDER_PlAYER = 2;
 var DEFENDER_PLAYER = 1;
 
-var storyline = {};
-
-// defender
-storyline[DEFENDER_PLAYER] = {
+Trigger.prototype.storyline = {};
+Trigger.prototype.storyline[DEFENDER_PLAYER] = {
 
 	"init": ["start"], // <-- "tutorial"
 	"start": ["intro", "defend_village"], // <-- can be an action/function or a state. If it's a state, then the state's entry conditions are checked and the state entered if the conditions are met.
@@ -15,10 +16,8 @@ storyline[DEFENDER_PLAYER] = {
 	"counter_strike": ["hurry_back_to_defend_village", "victory"]
 
 };
-
-// intruder
-storyline[INTRUDER_PLAYER] = {
-
+Trigger.prototype.storyline[INTRUDER_PLAYER] = {
+	// TODO
 
 };
 
@@ -30,6 +29,10 @@ storyline[INTRUDER_PLAYER] = {
 //======================================================================================
 // When ever we enter a new state, we may want to generate a message. 
 Trigger.prototype.messages = {}; // story telling
+Trigger.prototype.messages["start"] = function() 
+{
+	TriggerHelper.PushGUINotification([DEFENDER_PLAYER, INTRUDER_PLAYER], "54 B.C. All of Gaul has been subdued by Julius Caesar's Roman legionaires, known as 'The conquest of Gaul'.");
+}
 Trigger.prototype.messages["defend_village"] = function() 
 {
 	var cmpGUIInterface = Engine.QueryInterface(SYSTEM_ENTITY, IID_GuiInterface);
@@ -40,6 +43,8 @@ Trigger.prototype.messages["defend_village"] = function()
 		translateMessage: true
 	});
 }
+
+
 
 
 
@@ -68,16 +73,22 @@ Trigger.prototype.conditions["counter_strike"] = function()
 
 
 var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger); 
-	
+
+// STORY CONSTANTS
+Trigger.prototype.UNIT_COUNT_REQUIRED_FOR_COUNTER_ATTACK = 100;
+
+// STORY VARIABLES
 cmpTrigger.storyline = storyline;
 cmpTrigger.state = "init";
 cmpTrigger.activeEnemyAttacks = 0;
 
+// STORY EVENTS / TRIGGERS
 cmpTrigger.RegisterTrigger("OnTreasureCollected", "TreasureCollected", { "enabled": true });
 
+
+// STORY START
 cmpTrigger.DoAfterDelay(2000, "startStoryline", {});
 
-Trigger.prototype.UNIT_COUNT_REQUIRED_FOR_COUNTER_ATTACK = 100;
 
 
 
@@ -101,16 +112,18 @@ Trigger.prototype.storylineMachine = function(state_options)
 		// if (typeof state_or_action == 'string')
 		if (state_options[state_or_action] != undefined && state_options[state_or_action].length)
 		{
-			// it's a state: 
-			// only enter the state when the conditions are met:
+			// It's a state: 
+			// Only enter the state when the conditions are met:
+			// By default, i.e. if no condition function is specified, allow to enter the state!
 			var condition = this.conditions[state_or_action]; 
-			if (condition && typeof condition == 'object')
+			if (!condition || typeof condition != 'object' || !condition())
 			{	
-				if (condition())
-				{
-					this.state = state_or_action;
-			    	storylineMachine(state_options[state_or_action]);
-				}
+			}
+			else 
+			{
+				// enter the state:
+				this.state = state_or_action;
+			   	storylineMachine(state_options[state_or_action]);
 			}
 		}
 		else if (this[state_or_action] && typeof this[state_or_action] == 'object')
@@ -121,83 +134,27 @@ Trigger.prototype.storylineMachine = function(state_options)
 	
 }
 
+
+
 Trigger.prototype.intro = function(data)
 {
-	
-	var cmpGUIInterface = Engine.QueryInterface(SYSTEM_ENTITY, IID_GuiInterface);
-	// Refer to this wiki article for more information about translation support for messages: http://trac.wildfiregames.com/wiki/Internationalization
+	TriggerHelper.PushGUINotification([DEFENDER_PLAYER, INTRUDER_PLAYER],
+			"54 B.C. All of Gaul has been subdued by Julius Caesar's Roman legionaires, known as 'The conquest of Gaul'."
+	);
 	cmpGUIInterface.PushNotification({
-		"players": [1,2], 
-		"message": markForTranslation("Gaul is a peaceful place for their inhabitants. Boars being the exception!"),
-		translateMessage: true
+		"players": [DEFENDER_PLAYER], 
+		"parameters": {"animalKind": "Boars"},
+		"message": markForTranslation("Gaul is a peaceful place for their inhabitants. %(animalKind)s being the exception!"),
+		"translateMessage": true
 	});
 
 
 };
 
+
+
 Trigger.prototype.TreasureCollected = function(data)
 {
-	var cmpGUIInterface = Engine.QueryInterface(SYSTEM_ENTITY, IID_GuiInterface);
-
-	var count = ++this.treasureCount.players[data.player];
-	var goalCount = this.treasureCount.maximum / 2 + 1
-	var otherPlayer = (data.player == 1 ? 2 : 1);
-	
-	// Check if having more treasures than the enemy is still possible
-	if ( (count == this.treasureCount.maximum / 2) && 
-		(this.treasureCount.players[otherPlayer] == this.treasureCount.maximum / 2) )
-	{
-		cmpGUIInterface.PushNotification({"players": [1,2], "message": "No winner yet, prepare for battle!"});
-		
-		// keep notifying the player that the victory condition has changed.
-		var timerData = {"enabled": true, "delay": 10000, "interval": 12000}
-		this.RegisterTrigger("OnInterval", "BattleMessage", timerData);
-	}
-	else if (count >= goalCount) // Check for victory
-	{
-		cmpGUIInterface.PushNotification({
-			"players": [otherPlayer], 
-			"message": markForTranslation("Your enemy's treasury is filled to the brim, you loose!"),
-			"translateMessage": true
-		});
-		cmpGUIInterface.PushNotification({
-			"players": [data.player], 
-			"message": markForTranslation("Your treasury is filled to the brim, you are victorious!"),
-			"translateMessage": true
-		});
-		this.DoAfterDelay(5000, "Victory", data.player);
-	}
-	else
-	{
-		// Notify if the other player if a player is close to victory (3 more treasures to collect)
-		if (count + 3 == goalCount)
-		{
-			cmpGUIInterface.PushNotification({
-				"players": [otherPlayer], 
-				"message": markForTranslation("Hurry up! Your enemy is close to victory!"),
-				"translateMessage": true
-			});
-		}
-		
-		if (count + 3 >= goalCount)
-		{
-			var remainingTreasures = ( goalCount - count);
-			cmpGUIInterface.PushNotification({
-				"players": [data.player],
-				"parameters": {"remainingTreasures": remainingTreasures},
-				"message": markForTranslation("Treasures remaining to collect for victory:  %(remainingTreasures)s!"),
-				"translateMessage": true
-			});
-		}
-		else
-		{
-			cmpGUIInterface.PushNotification({
-				"players": [data.player], 
-				"message": markForTranslation("You have collected a treasure!"),
-				"translateMessage": true
-			});
-		}
-	}
 };
 
 Trigger.prototype.BattleMessage = function()
@@ -210,7 +167,7 @@ Trigger.prototype.BattleMessage = function()
 	});
 }
 
-Trigger.prototype.Victory = function(playerID)
+Trigger.prototype.victory = function(playerID)
 {
 	TriggerHelper.SetPlayerWon(playerID);
 }
