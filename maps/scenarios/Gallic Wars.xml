@@ -59,7 +59,11 @@
         "r": 150
       }
     }
-  ]
+  	],
+	"TriggerScripts": [
+	    "scripts/TriggerHelper.js",
+		"scenarios/Gallic_Wars.js"
+	]
 }
 ]]></ScriptSettings>
 	<Entities>
