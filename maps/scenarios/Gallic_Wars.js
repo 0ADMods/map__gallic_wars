@@ -53,8 +53,18 @@ Trigger.prototype.messages["defend_village"] = function()
 //======================================================================================
 // CONDITIONS
 //======================================================================================
-Trigger.prototype.conditions = {};
-Trigger.prototype.conditions["counter_strike"] = function()
+Trigger.prototype.leaveConditions = {};
+
+Trigger.prototype.leaveConditions["defend_village"] = false;
+/*function()
+{
+	// count nearby enemy units: <-- now set in RangeAction. See next commit.
+	var cmpRangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
+	if (
+}*/
+
+Trigger.prototype.enterConditions = {};
+Trigger.prototype.enterConditions["counter_strike"] = function()
 {
 	var cmpPlayerMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_PlayerManager);
 	cmpPlayerMan.GetPlayer();
@@ -72,7 +82,16 @@ Trigger.prototype.conditions["counter_strike"] = function()
 	
 	
 }
+Trigger.prototype.enterConditions["subquest_rescue_le_druide"] = function()
+{
+//	// Never enter if a subquest is already achieved/solved:
+//	if (this.isAlreadyAchieved[DEFENDER_PLAYER]["subquest_rescue_le_druide"])
+//		return false;
 
+
+	
+
+}
 
 
 var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger); 
@@ -80,8 +99,9 @@ var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger);
 // STORY CONSTANTS
 Trigger.prototype.UNIT_COUNT_REQUIRED_FOR_COUNTER_ATTACK = 100;
 
-// STORY VARIABLES
+// STORY VARIABLES (to be saved in saved games xml)
 cmpTrigger.state = "init";
+cmpTrigger.isAlreadyAchieved = {};
 cmpTrigger.activeEnemyAttacks = 0;
 
 // STORY EVENTS / TRIGGERS
@@ -101,7 +121,7 @@ Trigger.prototype.startStoryline = function(data)
 		return;
 
 	// TODO How to determine which role the player has? PlayerID has to be figured out.
-	this.DoAfterDelay(2000, "storylineMachine", storyline[DEFENDER_PLAYER]);
+	this.DoAfterDelay(2000, "storylineMachine", this.storyline[DEFENDER_PLAYER][this.state]);
 
 }
 
@@ -112,13 +132,29 @@ Trigger.prototype.storylineMachine = function(state_options)
 	for each (var state_or_action in state_options)
 	{
 		// if (typeof state_or_action == 'string')
-		if (state_options[state_or_action] != undefined && state_options[state_or_action].length)
+		if (this.storyline[DEFENDER_PLAYER][state_or_action] != undefined && this.storyline[DEFENDER_PLAYER][state_or_action].length)
 		{
 			// It's a state: 
 			// Only enter the state when the conditions are met:
 			// By default, i.e. if no condition function is specified, allow to enter the state!
-			var condition = this.conditions[state_or_action]; 
-			if (!condition || typeof condition != 'object' || condition())
+			var leaveCondition = this.leaveConditions[this.state]; // of the current state.
+			// Termination condition:
+			if (leaveCondition != undefined 
+					&& (leaveCondition == false  || typeof leaveCondition == 'object' && leaveCondition() == false))
+			{
+				warn(this.state + " can't be left at this point, because you can't jump in the storyline. First solve your current task. TODO subquests being the exception. Subquests should work fully trigger based, i.e. there should not be a state for it. Actions/functions bound to the subquests should be marked as achieved when the final trigger action fires (i.e. the solving of the subquest).");
+				this.DoAfterDelay(1000, "storylineMachine", this.storyline[DEFENDER_PLAYER]); // check back in 1 second.
+				continue ;
+			}
+			// Common enter condition: Never enter if a state/quest is already achieved/solved: (Trigger set this as achieved.)
+			if (this.isAlreadyAchieved[DEFENDER_PLAYER] && this.isAlreadyAchieved[DEFENDER_PLAYER][state_or_action])
+			{
+				warn(state_or_action + " won't be entered because it's already been achieved.");
+				continue ;
+			}
+				
+			var enterCondition = this.enterConditions[state_or_action]; 
+			if (!enterCondition || typeof enterCondition != 'object' || enterCondition())
 			{
 				// enter the state:
 				this.state = state_or_action;
@@ -128,12 +164,20 @@ Trigger.prototype.storylineMachine = function(state_options)
 						TriggerHelper.PushGUINotification(DEFENDER_PLAYER, message);
 					else if (typeof message == 'object')
 						message();
-			   	storylineMachine(state_options[state_or_action]);
+				warn('Entering state: ' + state_or_action);
+			   	this.storylineMachine(this.storyline[DEFENDER_PLAYER][state_or_action]);
 			}
 		}
+		// Is this a function (in this case more specific: a trigger action)?
 		else if (this[state_or_action] && typeof this[state_or_action] == 'object')
 		{
-			this.DoAfterDelay(1000, state_or_action, {});
+			warn('Action: ' + state_or_action);
+			state_or_action();
+			//this.DoAfterDelay(1000, state_or_action, {});
+		}
+		else
+		{
+			warn('Neither state nor action: ' + state_or_action);
 		}
 	}
 	
@@ -143,6 +187,7 @@ Trigger.prototype.storylineMachine = function(state_options)
 
 Trigger.prototype.intro = function(data)
 {
+	warn('intro');
 	TriggerHelper.PushGUINotification([DEFENDER_PLAYER, INTRUDER_PLAYER],
 			"54 B.C. All of Gaul has been subdued by Julius Caesar's Roman legionaires, known as 'The conquest of Gaul'."
 	);
