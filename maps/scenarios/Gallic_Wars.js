@@ -94,6 +94,58 @@ Trigger.prototype.enterConditions["subquest_rescue_le_druide"] = function()
 }
 
 
+
+
+//======================================================================================
+// STORY FUNCTIONS/ TRIGGER ACTIONS 
+//======================================================================================
+Trigger.prototype.intro = function(data)
+{
+	warn('intro');
+	TriggerHelper.PushGUINotification([DEFENDER_PLAYER, INTRUDER_PLAYER],
+			"54 B.C. All of Gaul has been subdued by Julius Caesar's Roman legionaires, known as 'The conquest of Gaul'."
+	);
+	cmpGUIInterface.PushNotification({
+		"players": [DEFENDER_PLAYER], 
+		"parameters": {"animalKind": "Boars"},
+		"message": markForTranslation("Gaul is a peaceful place for their inhabitants. %(animalKind)s being the exception!"),
+		"translateMessage": true
+	});
+
+
+};
+
+
+
+Trigger.prototype.TreasureCollected = function(data)
+{
+};
+
+Trigger.prototype.BattleMessage = function()
+{
+	var cmpGUIInterface = Engine.QueryInterface(SYSTEM_ENTITY, IID_GuiInterface);
+	cmpGUIInterface.PushNotification({
+		"players": [1,2], 
+		"message": markForTranslation("Defeat your enemy to win!"),
+		"translateMessage": true
+	});
+}
+
+Trigger.prototype.victory = function(playerID)
+{
+	TriggerHelper.SetPlayerWon(playerID);
+}
+
+
+
+
+
+
+
+
+//======================================================================================
+// INIT/MAIN
+//======================================================================================
 var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger); 
 
 // STORY CONSTANTS
@@ -143,8 +195,8 @@ Trigger.prototype.storylineMachine = function(state_options)
 					&& (leaveCondition == false  || typeof leaveCondition == 'object' && leaveCondition() == false))
 			{
 				warn(this.state + " can't be left at this point, because you can't jump in the storyline. First solve your current task. TODO subquests being the exception. Subquests should work fully trigger based, i.e. there should not be a state for it. Actions/functions bound to the subquests should be marked as achieved when the final trigger action fires (i.e. the solving of the subquest).");
-				this.DoAfterDelay(1000, "storylineMachine", this.storyline[DEFENDER_PLAYER]); // check back in 1 second.
-				continue ;
+				this.DoAfterDelay(2000, "storylineMachine", state_options); // check back in 1 second.
+				return ;
 			}
 			// Common enter condition: Never enter if a state/quest is already achieved/solved: (Trigger set this as achieved.)
 			if (this.isAlreadyAchieved[DEFENDER_PLAYER] && this.isAlreadyAchieved[DEFENDER_PLAYER][state_or_action])
@@ -183,42 +235,4 @@ Trigger.prototype.storylineMachine = function(state_options)
 	
 }
 
-
-
-Trigger.prototype.intro = function(data)
-{
-	warn('intro');
-	TriggerHelper.PushGUINotification([DEFENDER_PLAYER, INTRUDER_PLAYER],
-			"54 B.C. All of Gaul has been subdued by Julius Caesar's Roman legionaires, known as 'The conquest of Gaul'."
-	);
-	cmpGUIInterface.PushNotification({
-		"players": [DEFENDER_PLAYER], 
-		"parameters": {"animalKind": "Boars"},
-		"message": markForTranslation("Gaul is a peaceful place for their inhabitants. %(animalKind)s being the exception!"),
-		"translateMessage": true
-	});
-
-
-};
-
-
-
-Trigger.prototype.TreasureCollected = function(data)
-{
-};
-
-Trigger.prototype.BattleMessage = function()
-{
-	var cmpGUIInterface = Engine.QueryInterface(SYSTEM_ENTITY, IID_GuiInterface);
-	cmpGUIInterface.PushNotification({
-		"players": [1,2], 
-		"message": markForTranslation("Defeat your enemy to win!"),
-		"translateMessage": true
-	});
-}
-
-Trigger.prototype.victory = function(playerID)
-{
-	TriggerHelper.SetPlayerWon(playerID);
-}
 
