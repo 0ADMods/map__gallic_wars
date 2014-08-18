@@ -15,7 +15,7 @@
       <mesh>skeletal/m_hero_cape.dae</mesh>
       <props>
         <prop actor="props/units/heads/head_britomartus.xml" attachpoint="head"/>
-        <prop actor="props/units/shields/celt_britomartus.xml" attachpoint="shield"/>
+        <prop actor="fauna/boar.xml" attachpoint="r_hip"/>
 		<!--        <prop actor="props/units/weapons/spear_gold.xml" attachpoint="r_hand"/>
         -->
         <prop actor="props/temp/l_sheath.xml" attachpoint="l_hip"/>
@@ -23,6 +23,20 @@
         -->
       </props>
       <textures><texture file="skeletal/celt_britomartus.dds" name="baseTex"/></textures>
+    </variant>
+  </group>
+  <group>
+    <variant frequency="50" name="Base">
+      <props>
+        <prop actor="fauna/boar.xml" attachpoint="r_hip"/>
+        <prop actor="fauna/boar.xml" attachpoint="l_hip"/>
+      </props>
+    </variant>
+    <variant frequency="50" name="Base">
+      <props>
+        <prop actor="fauna/boar.xml" attachpoint="r_hip"/>
+        <prop actor="props/temp/l_sheath.xml" attachpoint="l_hip"/>
+      </props>
     </variant>
   </group>
   <group>
