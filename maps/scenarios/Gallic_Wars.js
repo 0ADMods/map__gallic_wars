@@ -9,11 +9,28 @@ Trigger.prototype.storyline = {};
 Trigger.prototype.storyline[DEFENDER_PLAYER] = {
 
 	"init": ["start"], // <-- "tutorial"
-	"start": ["intro", "defend_village"], // <-- can be an action/function or a state. If it's a state, then the state's entry conditions are checked and the state entered if the conditions are met.
-	"defend_village": ["subquest_free_the_druide", "enemy_attack", "counter_strike"],
-	"subquest_free_the_druide": ["hurry_back_to_defend_village", "counter_strike"],
-	"hurry_back_to_defend_village": ["print_hurry_back_messages", "defend_village"],
-	"counter_strike": ["hurry_back_to_defend_village", "victory"]
+	"start": ["intro", "construction_phase"], // <-- can be an action/function or a state. If it's a state, then the state's entry conditions are checked and the state entered if the conditions are met.
+	"construction_phase": [/*"fortify_village", "defend_village_selector"*/, "defend_village_against_increasing_force"],
+	"defend_village_selector": ["defend_village_against_increasing_force", "defend_village_against_increasing_force_gallic_reinforcements_due_to_druide_ties", "defend_village_against_descreasing_force", "defend_village_against_decreasing_force_gallic_reinforcements_due_to_druide_ties"],// TODO move enable interval_trigger_ ... to the common defend_village_selector and add function call that increases enemy strength.
+	"defend_village_against_increasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druide", "druide_is_rescued", "druide_is_dead", "random_enemy_centurio_excursion", "counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "decrease_trigger_that_launches_enemy_attacks_interval"],
+	"druide_is_rescued": ["grant_one_time_druide_reinforcements", "lessen_major_enemy_attack_probability", "defend_village_against_increasing_force_gallic_reinforcements_due_to_druide_ties"],
+	"druide_is_dead": ["grant_one_time_druide_reinforcements", "increase_major_enemy_attack_probability", "defend_village_against_increasing_force"],
+	"defend_village_against_increasing_force_gallic_reinforcements_due_to_druide_ties": [ "gallic_neighbours_reinforcements", "random_enemy_centurio_excursion", "counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "druide_is_dead", "defend_village_selector"/*must be the last item to avoid the danger of an endless loop if no state can be reached before we over and over reenter defend_village_xy!*/],
+	
+	"turn_the_tide": ["deactivate_interval_trigger_that_launches_enemy_attacks", "destroy_enemy_encampment_within_time"],
+	"destroy_enemy_encampment_within_time": ["turning_the_tide_failed", "tide_is_turned"],
+	"tide_is_turned": ["wipe_out_enemy"],
+	"turning_the_tide_failed": ["defend_village_selector"], // <-- extra state to easily allow to print a message once and switch back to the correct defend village state (depending on if the enemy centurio is still alive/ a new one already arrived and if the druide has already been rescued and is still alive)
+	
+	// once the enemy centurio was killed or captured, we enter:
+	"defend_village_against_decreasing_force": ["random_make_call_to_rescue_the_druide", "random_launch_major_enemy_assault", "enemy_centurio_excursion", "counter_strike_recommendation", "phoenician_trader_visit", "turn_the_tide"],
+	"defend_village_against_decreasing_force_gallic_reinforcements_due_to_druide_ties": [ "gallic_neighbours_reinforcements", "random_launch_major_enemy_assault", "counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide"],
+
+	"hurry_back_to_defend_village": ["defend_village_against_increasing", "defend_village"],
+	"wipe_out_enemy": ["less_than_x_population_count", "victory"],
+	"less_than_x_population_count": ["enemy_turns_the_tide"],
+	"enemy_turns_the_tide": ["new_enemy_centurio_arrived"],
+	"new_enemy_centurio_arrived": ["launch_major_enemy_assault", "defend_village_selector"]
 
 };
 Trigger.prototype.storyline[INTRUDER_PLAYER] = {
