@@ -33,9 +33,9 @@
 		</Postproc>
 	</Environment>
 	<Camera>
-		<Position x="353.39" y="204.607" z="-163.63"/>
-		<Rotation angle="0.104787"/>
-		<Declination angle="0.607649"/>
+		<Position x="489.786" y="342.563" z="-109.49"/>
+		<Rotation angle="0"/>
+		<Declination angle="0.610865"/>
 	</Camera>
 	<ScriptSettings><![CDATA[
 {
@@ -7523,7 +7523,6 @@
 			<Position x="442.19205" z="522.12012"/>
 			<Orientation y="-2.57183"/>
 			<Obstruction group="1617" group2="1618"/>
-			<Actor seed="31780"/>
 		</Entity>
 		<Entity uid="1615">
 			<Template>other/palisades_rocks_tower</Template>
@@ -17083,6 +17082,258 @@
 			<Position x="475.29395" z="348.55042"/>
 			<Orientation y="1.12269"/>
 			<Actor seed="0"/>
+		</Entity>
+		<Entity uid="3395">
+			<Template>special/trigger_point_A</Template>
+			<Player>0</Player>
+			<Position x="353.12311" z="456.58155"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="11067"/>
+		</Entity>
+		<Entity uid="3396">
+			<Template>special/trigger_point_A</Template>
+			<Player>0</Player>
+			<Position x="323.53113" z="465.33219"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="58512"/>
+		</Entity>
+		<Entity uid="3397">
+			<Template>special/trigger_point_A</Template>
+			<Player>0</Player>
+			<Position x="341.05573" z="484.60041"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="46695"/>
+		</Entity>
+		<Entity uid="3398">
+			<Template>special/trigger_point_A</Template>
+			<Player>0</Player>
+			<Position x="372.54209" z="472.7169"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="44240"/>
+		</Entity>
+		<Entity uid="3399">
+			<Template>special/trigger_point_A</Template>
+			<Player>0</Player>
+			<Position x="351.17167" z="502.23673"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="32129"/>
+		</Entity>
+		<Entity uid="3400">
+			<Template>special/trigger_point_A</Template>
+			<Player>0</Player>
+			<Position x="370.07425" z="512.44056"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="44548"/>
+		</Entity>
+		<Entity uid="3401">
+			<Template>special/trigger_point_A</Template>
+			<Player>0</Player>
+			<Position x="304.0218" z="450.90497"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="25030"/>
+		</Entity>
+		<Entity uid="3402">
+			<Template>special/trigger_point_A</Template>
+			<Player>0</Player>
+			<Position x="336.57654" z="422.9586"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="22266"/>
+		</Entity>
+		<Entity uid="3403">
+			<Template>special/trigger_point_A</Template>
+			<Player>0</Player>
+			<Position x="351.31955" z="437.10093"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="63265"/>
+		</Entity>
+		<Entity uid="3404">
+			<Template>special/trigger_point_A</Template>
+			<Player>0</Player>
+			<Position x="379.27454" z="436.80088"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="42998"/>
+		</Entity>
+		<Entity uid="3410">
+			<Template>special/trigger_point_A</Template>
+			<Player>0</Player>
+			<Position x="394.47034" z="464.53812"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="37547"/>
+		</Entity>
+		<Entity uid="3411">
+			<Template>special/trigger_point_A</Template>
+			<Player>0</Player>
+			<Position x="442.05356" z="497.42347"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="26437"/>
+		</Entity>
+		<Entity uid="3412">
+			<Template>special/trigger_point_A</Template>
+			<Player>0</Player>
+			<Position x="442.18573" z="474.91791"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="6170"/>
+		</Entity>
+		<Entity uid="3413">
+			<Template>special/trigger_point_A</Template>
+			<Player>0</Player>
+			<Position x="351.04661" z="526.54676"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="12672"/>
+		</Entity>
+		<Entity uid="3414">
+			<Template>special/trigger_point_B</Template>
+			<Player>0</Player>
+			<Position x="450.23945" z="537.04554"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="56964"/>
+		</Entity>
+		<Entity uid="3415">
+			<Template>special/trigger_point_B</Template>
+			<Player>0</Player>
+			<Position x="228.62809" z="464.54407"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="14528"/>
+		</Entity>
+		<Entity uid="3417">
+			<Template>special/trigger_point_C</Template>
+			<Player>0</Player>
+			<Position x="602.67219" z="670.73694"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="10064"/>
+		</Entity>
+		<Entity uid="3418">
+			<Template>special/trigger_point_C</Template>
+			<Player>0</Player>
+			<Position x="145.96851" z="659.24903"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="42927"/>
+		</Entity>
+		<Entity uid="3419">
+			<Template>special/trigger_point_C</Template>
+			<Player>0</Player>
+			<Position x="367.10615" z="742.79029"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="57248"/>
+		</Entity>
+		<Entity uid="3422">
+			<Template>special/trigger_point_E</Template>
+			<Player>0</Player>
+			<Position x="701.98652" z="207.68555"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="13045"/>
+		</Entity>
+		<Entity uid="3423">
+			<Template>special/trigger_point_F</Template>
+			<Player>0</Player>
+			<Position x="329.30927" z="50.3716"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="28973"/>
+		</Entity>
+		<Entity uid="3424">
+			<Template>special/trigger_point_D</Template>
+			<Player>0</Player>
+			<Position x="633.0409" z="259.55762"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="8648"/>
+		</Entity>
+		<Entity uid="3425">
+			<Template>special/trigger_point_G</Template>
+			<Player>0</Player>
+			<Position x="139.7577" z="110.16614"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="50097"/>
+		</Entity>
+		<Entity uid="3426">
+			<Template>special/trigger_point_H</Template>
+			<Player>0</Player>
+			<Position x="142.55903" z="347.26481"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="33450"/>
+		</Entity>
+		<Entity uid="3427">
+			<Template>special/trigger_point_I</Template>
+			<Player>0</Player>
+			<Position x="188.29319" z="213.22489"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="106"/>
+		</Entity>
+		<Entity uid="3428">
+			<Template>special/trigger_point_I</Template>
+			<Player>0</Player>
+			<Position x="390.02799" z="224.0654"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="25063"/>
+		</Entity>
+		<Entity uid="3429">
+			<Template>special/trigger_point_I</Template>
+			<Player>0</Player>
+			<Position x="451.83277" z="184.25992"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="53264"/>
+		</Entity>
+		<Entity uid="3430">
+			<Template>special/trigger_point_J</Template>
+			<Player>0</Player>
+			<Position x="285.92548" z="388.87903"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="46717"/>
+		</Entity>
+		<Entity uid="3431">
+			<Template>special/trigger_point_J</Template>
+			<Player>0</Player>
+			<Position x="357.46473" z="343.19324"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="65227"/>
+		</Entity>
+		<Entity uid="3432">
+			<Template>special/trigger_point_J</Template>
+			<Player>0</Player>
+			<Position x="420.31247" z="352.60578"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="25184"/>
+		</Entity>
+		<Entity uid="3433">
+			<Template>special/trigger_point_I</Template>
+			<Player>0</Player>
+			<Position x="557.25995" z="268.57902"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="4897"/>
+		</Entity>
+		<Entity uid="3434">
+			<Template>special/trigger_point_J</Template>
+			<Player>0</Player>
+			<Position x="487.05405" z="379.28324"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="54747"/>
+		</Entity>
+		<Entity uid="3435">
+			<Template>special/trigger_point_J</Template>
+			<Player>0</Player>
+			<Position x="533.32447" z="550.60761"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="32415"/>
+		</Entity>
+		<Entity uid="3436">
+			<Template>special/trigger_point_J</Template>
+			<Player>0</Player>
+			<Position x="224.35801" z="513.98041"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="55826"/>
+		</Entity>
+		<Entity uid="3437">
+			<Template>special/trigger_point_J</Template>
+			<Player>0</Player>
+			<Position x="573.82172" z="441.6345"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="9623"/>
+		</Entity>
+		<Entity uid="3438">
+			<Template>special/trigger_point_K</Template>
+			<Player>0</Player>
+			<Position x="361.98243" z="483.58036"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="59917"/>
 		</Entity>
 	</Entities>
 	<Paths/>
