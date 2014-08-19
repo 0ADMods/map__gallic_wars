@@ -10,7 +10,7 @@ Trigger.prototype.storyline[DEFENDER_PLAYER] = {
 
 	"init": ["start"], // <-- "tutorial"
 	"start": ["spawn_gauls", "spawn_neutral", "spawn_enemy", "intro", "construction_phase"], // <-- can be an action/function or a state. If it's a state, then the state's entry conditions are checked and the state entered if the conditions are met.
-	"construction_phase": [/*"fortify_village", "defend_village_selector"*/, "defend_village_against_increasing_force"],
+	"construction_phase": [/*"fortify_village", "defend_village_selector"*/, "defend_village_selector"],
 	"defend_village_selector": ["defend_village_against_increasing_force", "defend_village_against_increasing_force_gallic_reinforcements_due_to_druide_ties", "defend_village_against_descreasing_force", "defend_village_against_decreasing_force_gallic_reinforcements_due_to_druide_ties"],// TODO move enable interval_trigger_ ... to the common defend_village_selector and add function call that increases enemy strength.
 	"defend_village_against_increasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druide", "druide_is_rescued", "druide_is_dead", "random_enemy_centurio_excursion", "counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_more_frequent"],
 	"druide_is_rescued": ["grant_one_time_druide_reinforcements", "lessen_major_enemy_attack_probability", "defend_village_against_increasing_force_gallic_reinforcements_due_to_druide_ties"],
@@ -58,11 +58,11 @@ Trigger.prototype.messages["start"] = function()
 		
 	});
 }
-Trigger.prototype.messages["defend_village"] = function() 
+Trigger.prototype.messages["defend_village_selector"] = function() 
 {
 	PushGUINotification(
 		[DEFENDER_PLAYER], 
-		"Defend your village!"
+		"We are under siege. We must defend our village!"
 	);
 }
 
@@ -92,8 +92,11 @@ function PushGUINotification(players, message)
 // CONDITIONS
 //======================================================================================
 Trigger.prototype.leaveConditions = {};
+Trigger.prototype.enterConditions = {};
 
-Trigger.prototype.leaveConditions["defend_village"] = false;
+Trigger.prototype.leaveConditions["defend_village_selector"] = true; // a selector always allows to exit this state (it's the purpose of a selector!)
+//Trigger.prototype.leaveConditions["defend_village_against_increasing_force"] = false; // rather keep control to enterCondition whereever possible. Especially if subsequent states are achievements, which have to to be entered once they are achieved (no matter the leaveCondition).
+
 /*function()
 {
 	// count nearby enemy units: <-- now set in RangeAction. See next commit.
@@ -101,8 +104,17 @@ Trigger.prototype.leaveConditions["defend_village"] = false;
 	if (
 }*/
 
-Trigger.prototype.enterConditions = {};
-Trigger.prototype.enterConditions["counter_strike"] = function()
+
+Trigger.prototype.enterConditions["druide_is_saved"] = function()
+{
+	return this.is_druide_saved;
+}
+Trigger.prototype.enterConditions["druide_is_dead"] = function()
+{
+	return this.gallic_druide.TargetIsAlive(this.gallic_druide);
+}
+
+Trigger.prototype.enterConditions["turn_the_tide"] = function()
 {
 	var cmpPlayerMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_PlayerManager);
 	cmpPlayerMan.GetPlayer();
@@ -118,9 +130,19 @@ Trigger.prototype.enterConditions["counter_strike"] = function()
 	// 
 	return true;
 	
-	
 }
-Trigger.prototype.enterConditions["subquest_rescue_le_druide"] = function()
+
+Trigger.prototype.enterConditions["defend_village_against_increasing_force"] = function()
+{
+	// Is enemy centurio (still) alive?
+	if (!this.roman_centurio_in_command.TargetIsAlive(this.roman_centurio_in_command))
+		return false;
+	
+	return true; 
+	 
+}
+
+Trigger.prototype.enterConditions["rescue_le_druide"] = function()
 {
 //	// Never enter if a subquest is already achieved/solved:
 //	if (this.isAlreadyAchieved[DEFENDER_PLAYER]["subquest_rescue_le_druide"])
@@ -267,7 +289,7 @@ Trigger.prototype.RangeAction = function(data)
 {
 	// TODO Use ratio of own to enemy units as criterium.
 	if (data.currentCollection.length < this.TRESHOLD_ENEMY_COUNT_NEARBY_TO_HAVE_SUCCESSFULLY_DEFENDED)
-		this.leaveConditions["defend_village"] = true;
+		this.leaveConditions["defend_village_against_increasing_force"] = true;
 	
 };
 
@@ -299,9 +321,19 @@ Trigger.prototype.BattleMessage = function()
 	});
 }
 
+
+Trigger.prototype.remi = function(playerIDs)
+{
+	for each (var playerID in playerIDs)
+	{
+		TriggerHelper.SetPlayerWon(playerID);
+		this.is_victorious[playerID] = true;
+	}
+}
 Trigger.prototype.victory = function(playerID)
 {
 	TriggerHelper.SetPlayerWon(playerID);
+	this.is_victorious[playerID] = true;
 }
 
 
@@ -392,10 +424,15 @@ Trigger.prototype.startStoryline = function(data)
 	this.DoAfterDelay(2000, "storylineMachine", this.storyline[DEFENDER_PLAYER][this.state]);
 
 }
-
+cmpTrigger.is_victorious = [];
+cmpTrigger.is_victorious[DEFENDER_PLAYER] = false;
+cmpTrigger.is_victorious[INTRUDER_PLAYER] = false;
 // An option can be both a function or another state.
 Trigger.prototype.storylineMachine = function(state_options)
 {
+	// termination condition:
+	if (this.is_victorious[DEFENDER_PLAYER] || this.is_victorious[INTRUDER_PLAYER])
+		return ;
 	
 	for each (var state_or_action in state_options)
 	{
@@ -412,6 +449,7 @@ Trigger.prototype.storylineMachine = function(state_options)
 			{
 				warn(this.state + " can't be left at this point, because you can't jump in the storyline. First solve your current task. TODO subquests being the exception. Subquests should work fully trigger based, i.e. there should not be a state for it. Actions/functions bound to the subquests should be marked as achieved when the final trigger action fires (i.e. the solving of the subquest).");
 				this.DoAfterDelay(4000, "storylineMachine", state_options); // check back in 1 second.
+				//this.storylineMachine(state_options);
 				return ;
 			}
 			// Common enter condition: Never enter if a state/quest is already achieved/solved: (Trigger set this as achieved.)
@@ -422,7 +460,7 @@ Trigger.prototype.storylineMachine = function(state_options)
 			}
 				
 			var enterCondition = this.enterConditions[state_or_action]; 
-			if (!enterCondition || typeof enterCondition != 'function' && enterCondition || enterCondition())
+			if (!enterCondition || typeof enterCondition != 'function' && enterCondition || typeof enterCondition == 'function' && enterCondition())
 			{
 				// enter the state:
 				this.state = state_or_action;
@@ -432,8 +470,10 @@ Trigger.prototype.storylineMachine = function(state_options)
 						TriggerHelper.PushGUINotification(DEFENDER_PLAYER, message);
 					else if (typeof message == 'function')
 						message();
-				warn('Entering state: ' + state_or_action);
-			   	this.storylineMachine(this.storyline[DEFENDER_PLAYER][state_or_action]);
+				var state_options_next_state = this.storyline[DEFENDER_PLAYER][state_or_action];
+				warn('Entering state: ' + state_or_action + ' state_options_next_state: ' + state_options_next_state);
+			   	//this.storylineMachine(state_options_next_state);
+				this.DoAfterDelay(10, "storylineMachine", state_options_next_state); // check back in 1 second.
 			}
 		}
 		// Is this a function (in this case more specific: a trigger action)?
