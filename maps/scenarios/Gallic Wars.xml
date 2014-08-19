@@ -33,9 +33,9 @@
 		</Postproc>
 	</Environment>
 	<Camera>
-		<Position x="489.786" y="342.563" z="-109.49"/>
-		<Rotation angle="0"/>
-		<Declination angle="0.610865"/>
+		<Position x="309.337" y="66.1819" z="-23.9752"/>
+		<Rotation angle="0.247404"/>
+		<Declination angle="0.610866"/>
 	</Camera>
 	<ScriptSettings><![CDATA[
 {
@@ -17334,6 +17334,131 @@
 			<Position x="361.98243" z="483.58036"/>
 			<Orientation y="2.35621"/>
 			<Actor seed="59917"/>
+		</Entity>
+		<Entity uid="3440">
+			<Template>structures/rome_siege_wall_tower</Template>
+			<Player>2</Player>
+			<Position x="284.4886" z="62.79461"/>
+			<Orientation y="3.04513"/>
+			<Actor seed="2820"/>
+		</Entity>
+		<Entity uid="3441">
+			<Template>structures/rome_siege_wall_tower</Template>
+			<Player>2</Player>
+			<Position x="309.27259" z="65.53316"/>
+			<Orientation y="3.05788"/>
+			<Actor seed="38626"/>
+		</Entity>
+		<Entity uid="3442">
+			<Template>structures/rome_siege_wall_tower</Template>
+			<Player>2</Player>
+			<Position x="349.74006" z="69.14747"/>
+			<Orientation y="3.00637"/>
+			<Actor seed="12318"/>
+		</Entity>
+		<Entity uid="3443">
+			<Template>structures/rome_siege_wall_tower</Template>
+			<Player>2</Player>
+			<Position x="373.37757" z="70.65757"/>
+			<Orientation y="3.01882"/>
+			<Actor seed="2130"/>
+		</Entity>
+		<Entity uid="3444">
+			<Template>structures/rome_siege_wall_gate</Template>
+			<Player>2</Player>
+			<Position x="329.973" z="67.09685"/>
+			<Orientation y="3.02445"/>
+			<Obstruction group="3441" group2="3442"/>
+			<Actor seed="44302"/>
+		</Entity>
+		<Entity uid="3445">
+			<Template>structures/rome_siege_wall_long</Template>
+			<Player>2</Player>
+			<Position x="375.5294" z="53.31528"/>
+			<Orientation y="1.44372"/>
+			<Obstruction group="3443" group2="3451"/>
+			<Actor seed="40706"/>
+		</Entity>
+		<Entity uid="3446">
+			<Template>structures/rome_siege_wall_medium</Template>
+			<Player>2</Player>
+			<Position x="360.465" z="70.11854"/>
+			<Orientation y="3.06823"/>
+			<Obstruction group="3442" group2="3443"/>
+			<Actor seed="52118"/>
+		</Entity>
+		<Entity uid="3447">
+			<Template>structures/rome_siege_wall_medium</Template>
+			<Player>2</Player>
+			<Position x="296.168" z="64.0781"/>
+			<Orientation y="3.03745"/>
+			<Obstruction group="3440" group2="3441"/>
+			<Actor seed="24692"/>
+		</Entity>
+		<Entity uid="3448">
+			<Template>structures/rome_siege_wall_long</Template>
+			<Player>2</Player>
+			<Position x="285.79758" z="43.67524"/>
+			<Orientation y="-1.64904"/>
+			<Obstruction group="3440" group2="3452"/>
+			<Actor seed="12082"/>
+		</Entity>
+		<Entity uid="3450">
+			<Template>structures/rome_siege_wall_medium</Template>
+			<Player>2</Player>
+			<Position x="378.58677" z="23.80275"/>
+			<Orientation y="1.49105"/>
+			<Obstruction group="3451"/>
+			<Actor seed="47244"/>
+		</Entity>
+		<Entity uid="3451">
+			<Template>structures/rome_siege_wall_tower</Template>
+			<Player>2</Player>
+			<Position x="379.39252" z="10.2842"/>
+			<Orientation y="-1.60241"/>
+			<Actor seed="41762"/>
+		</Entity>
+		<Entity uid="3452">
+			<Template>structures/rome_siege_wall_tower</Template>
+			<Player>2</Player>
+			<Position x="286.53818" z="23.77845"/>
+			<Orientation y="0.01626"/>
+			<Actor seed="6120"/>
+		</Entity>
+		<Entity uid="3453">
+			<Template>structures/rome_army_camp</Template>
+			<Player>2</Player>
+			<Position x="352.00977" z="35.7563"/>
+			<Orientation y="-1.69094"/>
+			<Actor seed="52538"/>
+		</Entity>
+		<Entity uid="3454">
+			<Template>structures/rome_tent</Template>
+			<Player>2</Player>
+			<Position x="311.44986" z="39.20604"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="49450"/>
+		</Entity>
+		<Entity uid="3455">
+			<Template>structures/rome_tent</Template>
+			<Player>2</Player>
+			<Position x="303.31913" z="29.72417"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="34622"/>
+		</Entity>
+		<Entity uid="3456">
+			<Template>structures/rome_tent</Template>
+			<Player>2</Player>
+			<Position x="315.16037" z="27.86057"/>
+			<Orientation y="0.71866"/>
+			<Actor seed="36872"/>
+		</Entity>
+		<Entity uid="3457">
+			<Template>structures/rome_tent</Template>
+			<Player>2</Player>
+			<Position x="300.41953" z="42.0308"/>
+			<Orientation y="0.74668"/>
+			<Actor seed="39286"/>
 		</Entity>
 	</Entities>
 	<Paths/>
