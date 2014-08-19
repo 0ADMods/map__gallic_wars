@@ -60,17 +60,30 @@ Trigger.prototype.messages["start"] = function()
 }
 Trigger.prototype.messages["defend_village"] = function() 
 {
-	var cmpGUIInterface = Engine.QueryInterface(SYSTEM_ENTITY, IID_GuiInterface);
-	// Refer to this wiki article for more information about translation support for messages: http://trac.wildfiregames.com/wiki/Internationalization
-	cmpGUIInterface.PushNotification({
-		"players": [DEFENDER_PLAYER], 
-		"message": markForTranslation("Defend your village!"),
-		translateMessage: true
-	});
+	PushGUINotification(
+		[DEFENDER_PLAYER], 
+		"Defend your village!"
+	);
 }
 
 
+function PushGUINotification(players, message)
+{
 
+	if (!players || !message || message == "")
+		return ;
+	
+	var cmpGUIInterface = Engine.QueryInterface(SYSTEM_ENTITY, IID_GuiInterface);
+	// Refer to this wiki article for more information about translation support for messages: http://trac.wildfiregames.com/wiki/Internationalization
+	var recipients =  players;
+	if (!players.length)
+		recipients = [players];
+	cmpGUIInterface.PushNotification({
+		"players": recipients, 
+		"message": markForTranslation(message),
+		translateMessage: true
+	});
+}
 
 
 
@@ -326,6 +339,32 @@ data.interval = 10000; // every 10 seconds
 cmpTrigger.numberOfTimerTrigger = 0;
 cmpTrigger.maxNumberOfTimerTrigger = 3; // execute it 3 times maximum
 cmpTrigger.RegisterTrigger("OnInterval", "IntervalAction", data);
+
+// SpawnEnemyAndAttack steering data: (maybe changed during/by the storyline)
+cmpTrigger.enemy_attack_interval = 60000; // every 1 minute
+cmpTrigger.enemy_attack_strength = 
+
+var composition_very_weak = {"Classes": ["Infantry+Melee+Basic"], "frequency_or_weight": 10};
+var composition_weak = {"Classes": ["Melee Ranged"], "frequency_or_weight": 15};
+var composition_normal = {"Classes": ["Melee Ranged Healer"], "frequency_or_weight": 25};
+var composition_strong = {"Classes": ["Elite Champion Healer"], "frequency_or_weight": 15};
+var composition_very_strong = {"Classes": ["Elite Champion Healer Siege"], "frequency_or_weight": 10};
+
+var composition_siege_only = {"Classes": ["Siege"], "frequency_or_weight": 24};
+var composition_heroes_only = {"Classes": ["Hero"], "frequency_or_weight": 1};
+
+cmpTrigger.enemy_attack_compositions = [
+	composition_very_weak
+	, composition_weak
+	, composition_normal
+	, composition_strong
+	, composition_very_strong
+	, composition_siege_only
+//	, composition_heroes_only
+];
+
+
+
 var entities = cmpTrigger.GetTriggerPoints("A");
 data = {
 	"entities": entities, // central points to calculate the range circles
@@ -421,3 +460,164 @@ function challengeDeclined()
 	warn('Caesar will be happy to hear, he has a new ally. Hopefully he does not have special plans with Gallic allies now that Gaul is lost.');
 }
 
+
+
+
+function spawn_gauls()
+{
+}
+function spawn_neutral()
+{
+}
+function spawn_enemy()
+{
+}
+
+
+function enable_trigger_that_launches_enemy_attacks()
+{
+	var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger);
+	
+	// overwrite potentially already existing trigger (Reregister is required because the trigger interval may have been adapted by the storyline.)
+	data.enabled = false;
+	data.delay = 1000; // launch first wave in one second from now.
+	data.interval = cmpTrigger.enemy_attack_interval;
+	cmpTrigger.RegisterTrigger("OnInterval", "SpawnEnemyAndAttack", data);
+	
+	cmpTrigger.EnableTrigger("OnInterval", "SpawnEnemyAndAttack");
+}
+
+function disable_trigger_that_launches_enemy_attacks()
+{
+	var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger);
+	cmpTrigger.DisableTrigger("OnInterval", "SpawnEnemyAndAttack");
+}
+
+function random_make_call_to_rescue_the_druide()
+{
+	// abort chance 10 %
+	if (random_abort(.1))
+		return ;
+	
+	PushGUINotification([DEFENDER_PLAYER], "We have received a message from our Druide: 'My Gallic friends, please increase your efforts to rescue me! I don't know where they brought me, but I can sense it must be in the forrest ... and it smells like if they made a fire.'");
+}
+
+
+
+function random_enemy_centurio_excursion()
+{
+	// abort chance 10 %
+	if (random_abort(.1))
+		return ;
+	
+	cmpTrigger.all_roman_centurios_so_far_ids = []; // ids to be serializable.
+	
+	if (!cmpTrigger.roman_centurio_in_command)
+		return ;
+		
+	PushGUINotification([DEFENDER_PLAYER], "Gallic spy: 'The Roman Centurio is underway to have a look at our village!'");
+	var trigger_point_in_gallic_village = cmpTrigger.GetTriggerPoints("K")[0];
+	cmpTrigger.roman_centurio_in_command.PushOrderFront(
+		"WalkToTargetRange", { "target": trigger_point_in_gallic_village, "min": 0, "max": 300 }
+	);
+
+	cmpTrigger.EnableTrigger("OnRange", "if_roman_centurio_arrived_then_attack_closest_enemy");
+
+}
+
+Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy(data)
+{
+	if (data.triggerPoint != "K" /*&& triggerPointOwner != DEFENDER_PLAYER*/)
+		return ;
+
+	// No centurio that is alive and in active command?
+	if (!this.roman_centurio_in_command)
+		return ;
+	
+	// The centurio entered the range of the trigger point?
+	if (data.entities.indexOf(this.roman_centurio_in_command) === -1)
+		return ;
+
+	var range = 128; // TODO: what's a sensible number?
+	// Find units that are enemies of the Roman centurio:
+	// 1) determine enemy players:
+	var enemy_players = [];
+	var cmpOwnership = Engine.QueryInterface(this.roman_centurio_in_command, IID_Ownership);
+	var playerMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_PlayerManager);
+	var cmpPlayer = Engine.QueryInterface(playerMan.GetPlayerByID(cmpOwnership.GetOwner()), IID_Player);
+	var numPlayers = playerMan.GetNumPlayers();
+	for (var playerNum = 1; playerNum < numPlayers; ++playerNum)
+	{
+		// Is not gaia and not Roman unit and not ally of the Roman Centurio?
+		if (/*playerNum != 0 &&*/ playerNum != cmpPlayer.GetPlayerID() && !cmpPlayer.IsAlly(playerNum))
+			players.push(i);
+	}
+	
+	var rangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
+	var nearby = rangeMan.ExecuteQuery(this.roman_centurio_in_command, 0, range, players, IID_Identity); //<-- only those with Identity. (Note: RangeManager seems to be C++ component/entity only.)
+	var target = undefined;
+	var target_cmpIdentity = undefined;
+	for each (var ent in nearby)
+	{
+        var cmpIdentity = Engine.QueryInterface(ent, IID_Identity);
+		// Only attack units!
+		var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI); 
+		if (!cmpUnitAI) 
+			continue;
+		// Only attack leaders:
+		if (cmpIdentity.GetClassesList().indexOf("Hero") === -1)
+			continue;
+		target = ent;
+		target_cmpIdentity = cmpIdentity;
+		break;
+	}
+	if (!target)
+		PushGUINotification([DEFENDER_PLAYER], "Secret forces: 'The enemy centurio tried to attack one of your heroes!'");
+
+    var cmpEnemyOfCenturioPosition = Engine.QueryInterface(target, IID_Position);
+    var pos = cmpEnemyOfCenturioPosition.GetPosition();
+	this.roman_centurio_in_command.PushOrderFront("WalkAndFight", { "x": pos.x, "z": pos.z, "target": target, "force": false });
+	
+	PushGUINotification([DEFENDER_PLAYER], "Royal guard: 'The Roman Centurio is attacking our hero: " + target_cmpIdentity.GetGenericName() + "!'");
+}
+
+	", "counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "decrease_trigger_that_launches_enemy_attacks_interval"],
+		
+	
+	
+	"druide_is_rescued": ["grant_one_time_druide_reinforcements", "lessen_major_enemy_attack_probability", "defend_village_against_increasing_force_gallic_reinforcements_due_to_druide_ties"],
+	"druide_is_dead": ["grant_one_time_druide_reinforcements", "increase_major_enemy_attack_probability", "defend_village_against_increasing_force"],
+	"defend_village_against_increasing_force_gallic_reinforcements_due_to_druide_ties": [ "gallic_neighbours_reinforcements", "random_enemy_centurio_excursion", "counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "druide_is_dead", "defend_village_selector"/*must be the last item to avoid the danger of an endless loop if no state can be reached before we over and over reenter defend_village_xy!*/],
+	
+	"turn_the_tide": ["deactivate_interval_trigger_that_launches_enemy_attacks", "destroy_enemy_encampment_within_time"],
+	"destroy_enemy_encampment_within_time": ["turning_the_tide_failed", "tide_is_turned"],
+	"tide_is_turned": ["wipe_out_enemy"],
+	"turning_the_tide_failed": ["defend_village_selector"], // <-- extra state to easily allow to print a message once and switch back to the correct defend village state (depending on if the enemy centurio is still alive/ a new one already arrived and if the druide has already been rescued and is still alive)
+	
+ 	// once the enemy centurio was killed or captured, we enter:
+	"defend_village_against_decreasing_force": ["random_make_call_to_rescue_the_druide", "random_launch_major_enemy_assault", "enemy_centurio_excursion", "counter_strike_recommendation", "phoenician_trader_visit", "turn_the_tide"],
+	"defend_village_against_decreasing_force_gallic_reinforcements_due_to_druide_ties": [ "gallic_neighbours_reinforcements", "random_launch_major_enemy_assault", "counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide"],
+
+	"hurry_back_to_defend_village": ["defend_village_against_increasing", "defend_village"],
+	"wipe_out_enemy": ["less_than_x_population_count", "victory"],
+	"less_than_x_population_count": ["enemy_turns_the_tide"],
+	"enemy_turns_the_tide": ["new_enemy_centurio_arrived"],
+	"new_enemy_centurio_arrived": ["launch_major_enemy_assault", "defend_village_selector"]
+	
+function random_abort(abort_chance_percent_float_or_int, abort_when_greater_than_this)
+{
+	var abort_chance_percent_integer = 0;
+	if (Math.abs(Math.round(abort_chance_percent_float_or_int, 0)) === Math.abs(abort_chance_percent_float_or_int))
+		// no comma => no float!
+		abort_chance_percent_integer = abort_chance_percent_float_or_int;
+	else
+		abort_chance_percent_integer = abort_chance_percent_float_or_int * 100;
+	
+	// random decision: (99 because of 0 being included.)
+	var chance = Math.round(Math.random() * 99, 0);
+	
+	// e.g. chance_percent = 70 
+	if (chance < abort_chance_percent_integer)
+		return false;
+	return true;
+}
