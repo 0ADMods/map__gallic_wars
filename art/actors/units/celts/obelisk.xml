@@ -26,13 +26,13 @@
     </variant>
   </group>
   <group>
-    <variant frequency="50" name="Base">
+    <variant frequency="50" name="two_boars">
       <props>
         <prop actor="fauna/boar.xml" attachpoint="r_hip"/>
         <prop actor="fauna/boar.xml" attachpoint="l_hip"/>
       </props>
     </variant>
-    <variant frequency="50" name="Base">
+    <variant frequency="50" name="one_boar">
       <props>
         <prop actor="fauna/boar.xml" attachpoint="r_hip"/>
         <prop actor="props/temp/l_sheath.xml" attachpoint="l_hip"/>
