@@ -630,7 +630,7 @@ function grant_one_time_druide_reinforcements()
 	var druide_trigger_point = cmpTrigger.GetTriggerPoints("D")[0];
 
 	var count = 10; 
-	TriggerHelper.SpawnUnits(druide_trigger_point, "units/gaul_infantry_javelinist_a", count, INTRUDER_PLAYER); 
+	TriggerHelper.SpawnUnits(druide_trigger_point, "units/gaul_infantry_javelinist_a", count, DEFENDER_PLAYER); 
 	// TODO more diversity! 
 }	
 
