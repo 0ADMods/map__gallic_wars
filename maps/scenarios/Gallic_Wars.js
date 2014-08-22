@@ -1,6 +1,7 @@
 /**
- * Note: Enemy attacks are both triggered on RangeTrigger, e.g. in the forest when Gauls want to gather food.
- *  And when the storyline reaches a certain point.  
+ * Note: Enemy attacks are both triggered on Trigger
+ *  and when the storyline reaches a certain point. 
+ *  The recursion approach in the storyline machine has the benefit that old states which have not been finished yet, are properly executed until all actions have been executed or a new state has been entered or the leave condition is true when all options have been cycled which makes the storyline dive up, i.e. reentering the previous state to finish that one too. Of course a return statement by the storyline machine has to bubble up and lead to an immediate stop. 
  */
 var INTRUDER_PLAYER = 2;
 var DEFENDER_PLAYER = 1;
@@ -322,7 +323,7 @@ Trigger.prototype.BattleMessage = function()
 }
 
 
-Trigger.prototype.remi = function(playerIDs)
+Trigger.prototype.terminate_remi = function(playerIDs)
 {
 	for each (var playerID in playerIDs)
 	{
@@ -428,67 +429,114 @@ cmpTrigger.is_victorious = [];
 cmpTrigger.is_victorious[DEFENDER_PLAYER] = false;
 cmpTrigger.is_victorious[INTRUDER_PLAYER] = false;
 // An option can be both a function or another state.
-Trigger.prototype.storylineMachine = function(state_options)
+Trigger.prototype.storylineMachine = function(state)
 {
-	// termination condition:
-	if (this.is_victorious[DEFENDER_PLAYER] || this.is_victorious[INTRUDER_PLAYER])
-		return ;
-	
-	for each (var state_or_action in state_options)
+	// to be secure (this should be checked prior to entering the state, but in the init this may have been forgotten, so notify of it):
+	if (!this.storyline || !this.storyline[DEFENDER_PLAYER])
 	{
-		// if (typeof state_or_action == 'string')
-		if (this.storyline[DEFENDER_PLAYER][state_or_action] != undefined && this.storyline[DEFENDER_PLAYER][state_or_action].length)
-		{
-			// It's a state: 
-			// Only enter the state when the conditions are met:
-			// By default, i.e. if no condition function is specified, allow to enter the state!
-			var leaveCondition = this.leaveConditions[this.state]; // of the current state.
-			// Termination condition:
-			if (leaveCondition != undefined 
-					&& (leaveCondition == false  || typeof leaveCondition == 'function' && leaveCondition() == false))
-			{
-				warn(this.state + " can't be left at this point, because you can't jump in the storyline. First solve your current task. TODO subquests being the exception. Subquests should work fully trigger based, i.e. there should not be a state for it. Actions/functions bound to the subquests should be marked as achieved when the final trigger action fires (i.e. the solving of the subquest).");
-				this.DoAfterDelay(4000, "storylineMachine", state_options); // check back in 1 second.
-				//this.storylineMachine(state_options);
-				return ;
-			}
-			// Common enter condition: Never enter if a state/quest is already achieved/solved: (Trigger set this as achieved.)
-			if (this.isAlreadyAchieved[DEFENDER_PLAYER] && this.isAlreadyAchieved[DEFENDER_PLAYER][state_or_action])
-			{
-				warn(state_or_action + " won't be entered because it's already been achieved.");
-				continue ;
-			}
-				
-			var enterCondition = this.enterConditions[state_or_action]; 
-			if (!enterCondition || typeof enterCondition != 'function' && enterCondition || typeof enterCondition == 'function' && enterCondition())
-			{
-				// enter the state:
-				this.state = state_or_action;
-				var message = this.messages[state_or_action];
-				if (message)
-					if (typeof message == 'string') 
-						TriggerHelper.PushGUINotification(DEFENDER_PLAYER, message);
-					else if (typeof message == 'function')
-						message();
-				var state_options_next_state = this.storyline[DEFENDER_PLAYER][state_or_action];
-				warn('Entering state: ' + state_or_action + ' state_options_next_state: ' + state_options_next_state);
-			   	//this.storylineMachine(state_options_next_state);
-				this.DoAfterDelay(10, "storylineMachine", state_options_next_state); // check back in 1 second.
-			}
-		}
-		// Is this a function (in this case more specific: a trigger action)?
-		else if (this[state_or_action] && typeof this[state_or_action] == 'function')
-		{
-			warn('Action: ' + state_or_action + ' Typeof: ' + (typeof this[state_or_action]));
-			this[state_or_action]();
-			//this.DoAfterDelay(1000, state_or_action, {});
-		}
-		else
-		{
-			warn('Neither state nor action: ' + state_or_action);
-		}
+		this.DoAfterDelay(0, "terminate_remi", [DEFENDER_PLAYER, INTRUDER_PLAYER]);
+		return true; // full return, terminate in a remi because without storyline, no story. If you only want to use triggers and no storyline, then don't call this function!
 	}
 	
+	if (!this.storyline[DEFENDER_PLAYER][state])
+		return false; // return but keep the option to continue a prior state that may exist (bubble up).
+		
+	var state_options =	this.storyline[DEFENDER_PLAYER][state];
+	this.state = state; // <-- used for saved games for proper serialization in the trigger component.
+	warn('Examining state: ' + state);
+	
+	
+	var did_enter_a_new_state = false;
+	var is_this_recursion_depth_state_accomplished = false;
+	var is_leave_condition_not_met = true;
+	var SKIP_STATE_CYCLING_NOTIFICATION = 10; // 
+	var skipped_state_cycling_notifications = 0;
+	// cycled all options once and still can't leave the state to continue the previous state?
+	while (!is_this_recursion_depth_state_accomplished || is_leave_condition_not_met) 
+	{
+		// termination condition:
+		if (this.is_victorious[DEFENDER_PLAYER] || this.is_victorious[INTRUDER_PLAYER])
+		{
+			warn('Story has been terminated: DEFENDER_PLAYER ('+DEFENDER_PLAYER+') won? ' + this.is_victorious[DEFENDER_PLAYER] + ' INTRUDER_PLAYER ('+INTRUDER_PLAYER+') won? ' + this.is_victorious[INTRUDER_PLAYER]);
+			warn('^^^^^^^ Leaving this state: ' + this.state + ' == ' + state);
+			return true; // bubble up to terminate the story.
+		}
+		
+		// Can this recursion depth's state be left?
+		is_this_recursion_depth_state_accomplished = 
+				this.isAlreadyAchieved[DEFENDER_PLAYER] && this.isAlreadyAchieved[DEFENDER_PLAYER][state];
+		var leaveCondition = this.leaveConditions[state]; // of the current state. (has to be within this loop as the function result may change dynamically depending on the current situation on the map.)
+		is_leave_condition_not_met = leaveCondition != undefined 
+						&& (leaveCondition === false  || typeof leaveCondition == 'function' && leaveCondition() == false);
+		
+		// Can the next state be entered?  
+		for each (var state_or_action in state_options)
+		{
+			// if (typeof state_or_action == 'string')
+			if (this.storyline[DEFENDER_PLAYER][state_or_action] != undefined && this.storyline[DEFENDER_PLAYER][state_or_action].length)
+			{
+				// It's a state: 
+				// Only enter the state when the conditions are met:
+				// By default, i.e. if no condition function is specified, allow to enter the state!
+				var enterCondition = this.enterConditions[state_or_action]; 
+				// see further downwards.
+				// Termination condition:
+				if (is_leave_condition_not_met) 
+				{
+					warn(this.state + " can't be left at this point, because you can't jump in the storyline. First solve your current task. TODO subquests being the exception. Subquests should work fully trigger based, i.e. there should not be a state for it. Actions/functions bound to the subquests should be marked as achieved when the final trigger action fires (i.e. the solving of the subquest).");
+					//this.DoAfterDelay(4000, "storylineMachine", state);//state_options); // check back in 1 second (automatic when using the recursion approach).
+					//this.storylineMachine(state_options);
+					//return ;
+					continue; //<-- when using the recursion approach.  
+				}
+				// Common enter condition: Never enter if a state/quest is already achieved/solved: (Trigger set this as achieved.)
+				else if (this.isAlreadyAchieved[DEFENDER_PLAYER] && this.isAlreadyAchieved[DEFENDER_PLAYER][state_or_action])
+				{
+					warn(state_or_action + " won't be entered because it's already been achieved.");
+					continue ;
+				}
+					
+				else if (enterCondition == undefined // <-- enter state if no condition specified.
+						|| typeof enterCondition != 'function' && enterCondition || typeof enterCondition == 'function' && enterCondition())
+				{
+					// enter the state:
+					var message = this.messages[state_or_action];
+					if (message)
+						if (typeof message == 'string') 
+							TriggerHelper.PushGUINotification(DEFENDER_PLAYER, message);
+						else if (typeof message == 'function')
+							message();
+					var state_options_next_state = this.storyline[DEFENDER_PLAYER][state_or_action];
+					warn('Entering state: ' + state_or_action + ' state_options_next_state: ' + state_options_next_state);
+					//this.state = state_or_action; // <-- done in this function at the beginning now to avoid timing issues as we use DoAfterDelay.
+					did_enter_a_new_state = true; // in this recursion depth we entered a state 
+				   	//this.storylineMachine(state_options_next_state);
+					var story_is_terminated = this.DoAfterDelay(10, "storylineMachine", state_or_action);//state_options_next_state); // check back in 1 second.
+					if (story_is_terminated)
+						return true;
+					//else
+					//	return false; <-- commented to allow to continue this recursion depth's state option examination!
+				}
+				else {
+					warn('Either LeaveCondition: '+ leaveCondition +' of current state ('+ this.state +') or next state option ('+ state_or_action +') EnterCondition: '+ enterCondition +' not met. \n=> continuing with next state option or beginning to execute the actions and of this state anew until the conditions change.');
+				}
+				
+			}
+			// Is this a function (in this case more specific: a trigger action)?
+			else if (this[state_or_action] && typeof this[state_or_action] == 'function')
+			{
+				warn('Action: ' + state_or_action + ' Typeof: ' + (typeof this[state_or_action]));
+				this[state_or_action]();
+				//this.DoAfterDelay(1000, state_or_action, {});
+			}
+			else
+			{
+				warn('Neither state nor action: ' + state_or_action + ' => skipping');
+			}
+		}
+	}
+	// Bubble back up to the next higher recursion level depth: (i.e. the normal return to a previous state, without termination, i.e. noone is victorious and no remi arranged.)
+	return false;
 }
 
 function challengeAccepted()
