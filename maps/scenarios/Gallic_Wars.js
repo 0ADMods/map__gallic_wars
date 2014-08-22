@@ -88,6 +88,20 @@ function PushGUINotification(players, message)
 
 
 
+//======================================================================================
+// STATE CYCLE LOCK
+//======================================================================================
+Trigger.prototype.lock = {};
+
+
+//======================================================================================
+// STATE CYCLE DELAYS (optional, define if other than the default 1s delay is desired)
+//======================================================================================
+Trigger.prototype.state_cycle_delays = {};
+//Trigger.prototype.state_cycle_delays["defend_village_selector"] = 0;
+//
+// Note: Instead of state cycle delays, consider checking in the state enterCondition check function for the time elapsed. TODO
+
 
 //======================================================================================
 // CONDITIONS
@@ -104,18 +118,30 @@ Trigger.prototype.leaveConditions["defend_village_selector"] = true; // a select
 	var cmpRangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
 	if (
 }*/
-
-
-Trigger.prototype.enterConditions["druide_is_saved"] = function()
+Trigger.prototype.leaveConditions["construction_phase"] = function(cmpTrigger)
 {
-	return this.is_druide_saved;
-}
-Trigger.prototype.enterConditions["druide_is_dead"] = function()
-{
-	return this.gallic_druide.TargetIsAlive(this.gallic_druide);
+	// TODO count buildings of DEFENDER_PLAYER:
+	var buildings_built_count = 0;
+	var cmpRangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
+	var buildings = cmpRangeMan.GetEntitiesByPlayer(DEFENDER_PLAYER).filter(function(e) { if (Engine.QueryInterface(e, IID_BuildingAI)) return true; return false; });
+	cmpTrigger.initial_building_count = 30; // TODO refine the estimate or derive automatically.
+	buildings_built_count = buildings.length - cmpTrigger.initial_building_count;	
+	//if (cmpTrigger.vars["construction_phase"].building_count_to_build) 
+	if (buildings_built_count > cmpTrigger.CONSTRUCTION_PHASE_BUILDING_COUNT_TO_CONSTRUCT) 
+		cmpTrigger.isAlreadyAchieved["counter_phase"] = true;
+	return cmpTrigger.isAlreadyAchieved["construction_phase"] === true; 
 }
 
-Trigger.prototype.enterConditions["turn_the_tide"] = function()
+Trigger.prototype.enterConditions["druide_is_saved"] = function(cmpTrigger)
+{
+	return cmpTrigger.is_druide_saved;
+}
+Trigger.prototype.enterConditions["druide_is_dead"] = function(cmpTrigger)
+{
+	return !cmpTrigger.gallic_druide || !cmpTrigger.gallic_druide.TargetIsAlive(cmpTrigger.gallic_druide);
+}
+
+Trigger.prototype.enterConditions["turn_the_tide"] = function(cmpTrigger)
 {
 	var cmpPlayerMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_PlayerManager);
 	cmpPlayerMan.GetPlayer();
@@ -124,7 +150,7 @@ Trigger.prototype.enterConditions["turn_the_tide"] = function()
 	
 
 	// Count active enemy attacks. If there are any active attacks, then no counter attack can be ordered.
-	if (this.activeEnemyAttacks > 0)
+	if (cmpTrigger.activeEnemyAttacks > 0)
 		return false;
     
 
@@ -133,20 +159,20 @@ Trigger.prototype.enterConditions["turn_the_tide"] = function()
 	
 }
 
-Trigger.prototype.enterConditions["defend_village_against_increasing_force"] = function()
+Trigger.prototype.enterConditions["defend_village_against_increasing_force"] = function(cmpTrigger)
 {
 	// Is enemy centurio (still) alive?
-	if (!this.roman_centurio_in_command.TargetIsAlive(this.roman_centurio_in_command))
+	if (!cmpTrigger.roman_centurio_in_command.TargetIsAlive(cmpTrigger.roman_centurio_in_command))
 		return false;
 	
 	return true; 
 	 
 }
 
-Trigger.prototype.enterConditions["rescue_le_druide"] = function()
+Trigger.prototype.enterConditions["rescue_le_druide"] = function(cmpTrigger)
 {
 //	// Never enter if a subquest is already achieved/solved:
-//	if (this.isAlreadyAchieved[DEFENDER_PLAYER]["subquest_rescue_le_druide"])
+//	if (cmpTrigger.isAlreadyAchieved[DEFENDER_PLAYER]["subquest_rescue_le_druide"])
 //		return false;
 
 
@@ -223,50 +249,50 @@ Trigger.prototype.intro = function(data)
 ////////////////////////////
 Trigger.prototype.StructureBuiltAction = function(data)
 {
-	warn("The OnStructureBuilt event happened with the following data:");
-	warn(uneval(data));
+	this.debug("The OnStructureBuilt event happened with the following data:");
+	this.debug(uneval(data));
 };
 
 Trigger.prototype.ConstructionStartedAction = function(data)
 {
-	warn("The OnConstructionStarted event happened with the following data:");
-	warn(uneval(data));
+	this.debug("The OnConstructionStarted event happened with the following data:");
+	this.debug(uneval(data));
 };
 
 Trigger.prototype.TrainingFinishedAction = function(data)
 {
-	warn("The OnTrainingFinished event happened with the following data:");
-	warn(uneval(data));
+	this.debug("The OnTrainingFinished event happened with the following data:");
+	this.debug(uneval(data));
 };
 
 Trigger.prototype.TrainingQueuedAction = function(data)
 {
-	warn("The OnTrainingQueued event happened with the following data:");
-	warn(uneval(data));
+	this.debug("The OnTrainingQueued event happened with the following data:");
+	this.debug(uneval(data));
 };
 
 Trigger.prototype.ResearchFinishedAction = function(data)
 {
-	warn("The OnResearchFinished event happened with the following data:");
-	warn(uneval(data));
+	this.debug("The OnResearchFinished event happened with the following data:");
+	this.debug(uneval(data));
 };
 
 Trigger.prototype.ResearchQueuedAction = function(data)
 {
-	warn("The OnResearchQueued event happened with the following data:");
-	warn(uneval(data));
+	this.debug("The OnResearchQueued event happened with the following data:");
+	this.debug(uneval(data));
 };
 
 Trigger.prototype.OwnershipChangedAction = function(data)
 {
-	warn("The OnOwnershipChanged event happened with the following data:");
-	warn(uneval(data));
+	this.debug("The OnOwnershipChanged event happened with the following data:");
+	this.debug(uneval(data));
 };
 
 Trigger.prototype.PlayerCommandAction = function(data)
 {
-	warn("The OnPlayerCommand event happened with the following data:");
-	warn(uneval(data));
+	this.debug("The OnPlayerCommand event happened with the following data:");
+	this.debug(uneval(data));
 	if (data.player == DEFENDER_PLAYER) 
 	{
 	}
@@ -300,8 +326,8 @@ Trigger.prototype.TreasureCollected = function(data)
 
 Trigger.prototype.IntervalAction = function(data)
 {
-	warn("The OnInterval event happened with the following data:");
-	warn(uneval(data));
+	this.debug("The OnInterval event happened with the following data:");
+	this.debug(uneval(data));
 	this.numberOfTimerTrigger++;
 	if (this.numberOfTimerTrigger >= this.maxNumberOfTimerTrigger)
 		this.DisableTrigger("OnInterval", "IntervalAction");
@@ -323,6 +349,24 @@ Trigger.prototype.BattleMessage = function()
 }
 
 
+Trigger.prototype.terminate_story = function()
+{
+	this.debug('Story has been terminated: DEFENDER_PLAYER ('+DEFENDER_PLAYER+') won? ' + this.is_victorious[DEFENDER_PLAYER] + ' INTRUDER_PLAYER ('+INTRUDER_PLAYER+') won? ' + this.is_victorious[INTRUDER_PLAYER]);
+	if (this.is_victorious[DEFENDER_PLAYER] && this.is_victorious[INTRUDER_PLAYER])
+	{
+		PushGUINotification([DEFENDER_PLAYER, INTRUDER_PLAYER], 'Your actions have stalled in a patt situation.');
+	}
+	else if (this.is_victorious[INTRUDER_PLAYER])
+	{
+		PushGUINotification(DEFENDER_PLAYER, 'You have lost Gaul to the Romans.');
+		PushGUINotification(INTRUDER_PLAYER, 'Congratulation. You have conquered Gaul!');
+	}
+	else
+	{
+		PushGUINotification(DEFENDER_PLAYER, 'Congratulation. You have defended Gaul against the Roman intruders.');
+		PushGUINotification(INTRUDER_PLAYER, 'You had to retreat behind the Alps. Conquering Gaul turned out more difficult than expected.');
+	}
+}
 Trigger.prototype.terminate_remi = function(playerIDs)
 {
 	for each (var playerID in playerIDs)
@@ -409,6 +453,17 @@ data = {
 cmpTrigger.RegisterTrigger("OnRange", "RangeAction", data);
 
 
+// Termination conditions:
+cmpTrigger.is_victorious = [];
+cmpTrigger.is_victorious[DEFENDER_PLAYER] = false;
+cmpTrigger.is_victorious[INTRUDER_PLAYER] = false;
+
+Trigger.prototype.SKIP_STATE_CYCLING_NOTIFICATION_AMOUNT = 10;
+cmpTrigger.skipped_state_cycling_notification_count = 0;
+
+
+cmpTrigger.is_debug = true;
+
 // STORY START
 cmpTrigger.DoAfterDelay(2000, "startStoryline", {});
 
@@ -422,130 +477,181 @@ Trigger.prototype.startStoryline = function(data)
 		return;
 
 	// TODO How to determine which role the player has? PlayerID has to be figured out.
-	this.DoAfterDelay(2000, "storylineMachine", this.storyline[DEFENDER_PLAYER][this.state]);
+	this.DoAfterDelay(2000, "storylineMachine", this.state);//this.storyline[DEFENDER_PLAYER][this.state]);
+	//this.storylineMachine(this.state);
 
 }
-cmpTrigger.is_victorious = [];
-cmpTrigger.is_victorious[DEFENDER_PLAYER] = false;
-cmpTrigger.is_victorious[INTRUDER_PLAYER] = false;
+
 // An option can be both a function or another state.
 Trigger.prototype.storylineMachine = function(state)
 {
 	// to be secure (this should be checked prior to entering the state, but in the init this may have been forgotten, so notify of it):
 	if (!this.storyline || !this.storyline[DEFENDER_PLAYER])
 	{
+		this.debug('Terminating with remi as this storyline not exists. Do not call the storyline if you do not want to use it or specify a storyline.');
 		this.DoAfterDelay(0, "terminate_remi", [DEFENDER_PLAYER, INTRUDER_PLAYER]);
 		return true; // full return, terminate in a remi because without storyline, no story. If you only want to use triggers and no storyline, then don't call this function!
 	}
 	
 	if (!this.storyline[DEFENDER_PLAYER][state])
+	{
+		this.debug('Undefined state: ' + state);
 		return false; // return but keep the option to continue a prior state that may exist (bubble up).
+	}
 		
 	var state_options =	this.storyline[DEFENDER_PLAYER][state];
 	this.state = state; // <-- used for saved games for proper serialization in the trigger component.
-	warn('Examining state: ' + state);
+	this.debug('Examining state: ' + state);
 	
 	
 	var did_enter_a_new_state = false;
 	var is_this_recursion_depth_state_accomplished = false;
 	var is_leave_condition_not_met = true;
-	var SKIP_STATE_CYCLING_NOTIFICATION = 10; // 
-	var skipped_state_cycling_notifications = 0;
+	this.skipped_state_cycling_notification_count = 0;
+	var leaveCondition = this.leaveConditions[state]; // of the current state. 
 	// cycled all options once and still can't leave the state to continue the previous state?
 	while (!is_this_recursion_depth_state_accomplished || is_leave_condition_not_met) 
 	{
 		// termination condition:
 		if (this.is_victorious[DEFENDER_PLAYER] || this.is_victorious[INTRUDER_PLAYER])
 		{
-			warn('Story has been terminated: DEFENDER_PLAYER ('+DEFENDER_PLAYER+') won? ' + this.is_victorious[DEFENDER_PLAYER] + ' INTRUDER_PLAYER ('+INTRUDER_PLAYER+') won? ' + this.is_victorious[INTRUDER_PLAYER]);
-			warn('^^^^^^^ Leaving this state: ' + this.state + ' == ' + state);
+			this.terminate_story();
+			this.debug('^^^^^^^ Leaving this state: ' + this.state + ' == ' + state);
+			this.is_story_terminated = true;
 			return true; // bubble up to terminate the story.
 		}
 		
 		// Can this recursion depth's state be left?
 		is_this_recursion_depth_state_accomplished = 
 				this.isAlreadyAchieved[DEFENDER_PLAYER] && this.isAlreadyAchieved[DEFENDER_PLAYER][state];
-		var leaveCondition = this.leaveConditions[state]; // of the current state. (has to be within this loop as the function result may change dynamically depending on the current situation on the map.)
+		// Has to be within this loop as the function result may change dynamically depending on the current situation on the map.
 		is_leave_condition_not_met = leaveCondition != undefined 
-						&& (leaveCondition === false  || typeof leaveCondition == 'function' && leaveCondition() == false);
+						&& (leaveCondition === false  || typeof leaveCondition == 'function' && leaveCondition(this) == false);
 		
-		// Can the next state be entered?  
-		for each (var state_or_action in state_options)
+		// Can the next state be entered?
+		var d = {"state": state, "state_options": state_options, "is_leave_condition_not_met": is_leave_condition_not_met}
+		//var is_story_terminated = this.handle_state(d);
+		var state_cycle_delay = 1000; // 1 second per default
+		if (this.state_cycle_delays && this.state_cycle_delays[state]) // <-- alternatively use the enterCondition() function and check for ingame time elapsed and return false when a certain interval is not maintained.
+			state_cycle_delay = +this.state_cycle_delays[state];
+		if (this.lock == undefined || !this.lock["handle_state"])
 		{
-			// if (typeof state_or_action == 'string')
-			if (this.storyline[DEFENDER_PLAYER][state_or_action] != undefined && this.storyline[DEFENDER_PLAYER][state_or_action].length)
-			{
-				// It's a state: 
-				// Only enter the state when the conditions are met:
-				// By default, i.e. if no condition function is specified, allow to enter the state!
-				var enterCondition = this.enterConditions[state_or_action]; 
-				// see further downwards.
-				// Termination condition:
-				if (is_leave_condition_not_met) 
-				{
-					warn(this.state + " can't be left at this point, because you can't jump in the storyline. First solve your current task. TODO subquests being the exception. Subquests should work fully trigger based, i.e. there should not be a state for it. Actions/functions bound to the subquests should be marked as achieved when the final trigger action fires (i.e. the solving of the subquest).");
-					//this.DoAfterDelay(4000, "storylineMachine", state);//state_options); // check back in 1 second (automatic when using the recursion approach).
-					//this.storylineMachine(state_options);
-					//return ;
-					continue; //<-- when using the recursion approach.  
-				}
-				// Common enter condition: Never enter if a state/quest is already achieved/solved: (Trigger set this as achieved.)
-				else if (this.isAlreadyAchieved[DEFENDER_PLAYER] && this.isAlreadyAchieved[DEFENDER_PLAYER][state_or_action])
-				{
-					warn(state_or_action + " won't be entered because it's already been achieved.");
-					continue ;
-				}
-					
-				else if (enterCondition == undefined // <-- enter state if no condition specified.
-						|| typeof enterCondition != 'function' && enterCondition || typeof enterCondition == 'function' && enterCondition())
-				{
-					// enter the state:
-					var message = this.messages[state_or_action];
-					if (message)
-						if (typeof message == 'string') 
-							TriggerHelper.PushGUINotification(DEFENDER_PLAYER, message);
-						else if (typeof message == 'function')
-							message();
-					var state_options_next_state = this.storyline[DEFENDER_PLAYER][state_or_action];
-					warn('Entering state: ' + state_or_action + ' state_options_next_state: ' + state_options_next_state);
-					//this.state = state_or_action; // <-- done in this function at the beginning now to avoid timing issues as we use DoAfterDelay.
-					did_enter_a_new_state = true; // in this recursion depth we entered a state 
-				   	//this.storylineMachine(state_options_next_state);
-					var story_is_terminated = this.DoAfterDelay(10, "storylineMachine", state_or_action);//state_options_next_state); // check back in 1 second.
-					if (story_is_terminated)
-						return true;
-					//else
-					//	return false; <-- commented to allow to continue this recursion depth's state option examination!
-				}
-				else {
-					warn('Either LeaveCondition: '+ leaveCondition +' of current state ('+ this.state +') or next state option ('+ state_or_action +') EnterCondition: '+ enterCondition +' not met. \n=> continuing with next state option or beginning to execute the actions and of this state anew until the conditions change.');
-				}
-				
-			}
-			// Is this a function (in this case more specific: a trigger action)?
-			else if (this[state_or_action] && typeof this[state_or_action] == 'function')
-			{
-				warn('Action: ' + state_or_action + ' Typeof: ' + (typeof this[state_or_action]));
-				this[state_or_action]();
-				//this.DoAfterDelay(1000, state_or_action, {});
-			}
-			else
-			{
-				warn('Neither state nor action: ' + state_or_action + ' => skipping');
-			}
+			this.lock["handle_state"] = true;
+			this.DoAfterDelay(state_cycle_delay, "handle_state", d);
+		}
+		else 
+		{
+			// check  back in a few seconds
+			this.DoAfterDelay(1000, "storylineMachine", state);
+			return false;
 		}
 	}
 	// Bubble back up to the next higher recursion level depth: (i.e. the normal return to a previous state, without termination, i.e. noone is victorious and no remi arranged.)
 	return false;
 }
 
+
+Trigger.prototype.handle_state = function(data)
+{
+	this.lock["handle_state"] = false;	
+	var state = data.state;
+	var state_options = data.state_options;
+	var is_leave_condition_not_met = data.is_leave_condition_not_met;
+	
+	// Can the next state be entered?  
+	for each (var state_or_action in state_options)
+	{
+		// if (typeof state_or_action == 'string')
+		if (this.storyline[DEFENDER_PLAYER][state_or_action] != undefined && this.storyline[DEFENDER_PLAYER][state_or_action].length)
+		{
+			// It's a state: 
+			// Only enter the state when the conditions are met:
+			// By default, i.e. if no condition function is specified, allow to enter the state!
+			var enterCondition = this.enterConditions[state_or_action]; 
+			// see further downwards.
+			// Termination condition:
+			if (is_leave_condition_not_met) 
+			{
+				this.debug(this.state + " can't be left at this point, because you can't jump in the storyline. First solve your current task. TODO subquests being the exception. Subquests should work fully trigger based, i.e. there should not be a state for it. Actions/functions bound to the subquests should be marked as achieved when the final trigger action fires (i.e. the solving of the subquest).");
+				//this.DoAfterDelay(4000, "storylineMachine", state);//state_options); // check back in 1 second (automatic when using the recursion approach).
+				//this.storylineMachine(state_options);
+				//return ;
+				continue; //<-- when using the recursion approach.  
+			}
+			// Common enter condition: Never enter if a state/quest is already achieved/solved: (Trigger set this as achieved.)
+			else if (this.isAlreadyAchieved[DEFENDER_PLAYER] && this.isAlreadyAchieved[DEFENDER_PLAYER][state_or_action])
+			{
+				this.debug(state_or_action + " won't be entered because it's already been achieved.");
+				continue ;
+			}
+				
+			else if (enterCondition == undefined // <-- enter state if no condition specified.
+					|| typeof enterCondition != 'function' && enterCondition || typeof enterCondition == 'function' && enterCondition(this))
+			{
+				// enter the state:
+				var message = this.messages[state_or_action];
+				if (message)
+					if (typeof message == 'string') 
+						TriggerHelper.PushGUINotification(DEFENDER_PLAYER, message);
+					else if (typeof message == 'function')
+						message();
+				var state_options_next_state = this.storyline[DEFENDER_PLAYER][state_or_action];
+				this.debug('Entering state: ' + state_or_action + ' state_options_next_state: ' + state_options_next_state);
+				//this.state = state_or_action; // <-- done in this function at the beginning now to avoid timing issues as we use DoAfterDelay.
+				//did_enter_a_new_state = true; // in this recursion depth we entered a state 
+			   	//var is_story_terminated // <-- now using this.is_story_terminated to allow the use of a delay.
+				//this.storylineMachine(state_or_action);//options_next_state);
+				this.state_enter_delay = 1000; // TODO
+				this.DoAfterDelay(this.state_enter_delay, "storylineMachine", state_or_action);//state_options_next_state); // check back in 1 second.
+				if (this.is_story_terminated)
+				{
+					this.terminate_story();//finish_story();
+					this.debug('^^^^^^^ Leaving this state: ' + this.state + ' == ' + state);
+					this.is_story_terminated = true;
+					return true;
+				}
+				//else
+				//	return false; <-- commented to allow to continue this recursion depth's state option examination!
+			}
+			else {
+				if (++this.skipped_state_cycling_notification_count > this.SKIP_STATE_CYCLING_NOTIFICATION_AMOUNT)
+				{
+					this.skipped_state_cycling_notification_count = 0;
+					this.debug('Either LeaveCondition: '+ leaveCondition +' of current state ('+ this.state +') or next state option ('+ state_or_action +') EnterCondition: '+ enterCondition +' not met. \n=> continuing with next state option or beginning to execute the actions and of this state anew until the conditions change.');
+				}
+			}
+			
+		}
+		// Is this a function (in this case more specific: a trigger action)?
+		else if (this[state_or_action] && typeof this[state_or_action] == 'function')
+		{
+			this.debug('Action: ' + state_or_action + ' Typeof: ' + (typeof this[state_or_action]));
+			this[state_or_action]();
+			//this.DoAfterDelay(1000, state_or_action, {});
+		}
+		else
+		{
+			this.debug('Neither state nor action: ' + state_or_action + ' => skipping');
+		}
+	}
+	return false;
+}
+
+Trigger.prototype.debug = function(message)
+{
+	if (this.is_debug == undefined || this.is_debug)
+		warn(message);
+}
+
 function challengeAccepted()
 {
-	warn('There is no time to loose. The Gaul we know is endangered.');
+	var message = 'There is no time to loose. The Gaul we know is endangered.';
+	PushGUINotification(DEFENDER_PLAYER, message);
 }
 function challengeDeclined()
 {
-	warn('Caesar will be happy to hear, he has a new ally. Hopefully he does not have special plans with Gallic allies now that Gaul is lost.');
+	var message = 'Caesar will be happy to hear, he has a new ally. Hopefully he does not have special plans with Gallic allies now that Gaul is lost.';
+	PushGUINotification(DEFENDER_PLAYER, message);
 }
 
 
