@@ -13,7 +13,7 @@ Trigger.prototype.storyline = {};
 Trigger.prototype.storyline[DEFENDER_PLAYER] = {
 
 	"init": ["start"], // <-- "tutorial"
-	"start": ["spawn_gauls", "spawn_neutral", "spawn_enemy", "intro", "construction_phase"], // <-- can be an action/function or a state. If it's a state, then the state's entry conditions are checked and the state entered if the conditions are met.
+	"start": ["spawn_initial_gauls", "spawn_initial_neutral", "spawn_initial_enemy", "intro", "construction_phase"], // <-- can be an action/function or a state. If it's a state, then the state's entry conditions are checked and the state entered if the conditions are met.
 	"construction_phase": [/*"fortify_village", "defend_village_selector"*/, "defend_village_selector"],
 	"defend_village_selector": ["defend_village_against_increasing_force", "defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties", "defend_village_against_decreasing_force", "defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties", "village_is_fallen"],// TODO move enable interval_trigger_ ... to the common defend_village_selector and add function call that increases enemy strength.
 	"village_is_fallen": ["terminate_doom_of_gaul"],
@@ -157,8 +157,7 @@ Trigger.prototype.leaveConditions["construction_phase"] = function(cmpTrigger)
 	var buildings = entities.filter(function(e) { if (Engine.QueryInterface(e, IID_BuildingAI)) return true; return false; }); 
 	var units = entities.filter(function(e) { if (Engine.QueryInterface(e, IID_UnitAI)) return true; return false; }); 
 	
-	cmpTrigger.initial_building_count = 30; // TODO refine the estimate or derive automatically.
-	var buildings_built_count = buildings.length - cmpTrigger.initial_building_count;	
+	var buildings_built_count = buildings.length - cmpTrigger.playerData[DEFENDER_PLAYER].initial_buildings.length;
 	cmpTrigger.debug('buildings_built_count: ' + buildings_built_count + ' buildings_total_count: ' + buildings.length);
 	//if (cmpTrigger.vars["construction_phase"].building_count_to_build) 
 	if (buildings_built_count > cmpTrigger.CONSTRUCTION_PHASE_BUILDING_COUNT_TO_CONSTRUCT) 
@@ -246,13 +245,13 @@ Trigger.prototype.enterConditions["defend_village_against_decreasing_force_galli
 
 Trigger.prototype.enterConditions["druid_is_dead"] = function(cmpTrigger)
 {
-	return !cmpTrigger.gauls || !cmpTrigger.gauls.druid || !cmpTrigger.gauls.druid.TargetIsAlive(cmpTrigger.gauls.druid);
+	return !cmpTrigger.gauls || !cmpTrigger.playerData[DEFENDER_PLAYER].druid || !cmpTrigger.playerData[DEFENDER_PLAYER].druid.TargetIsAlive(cmpTrigger.playerData[DEFENDER_PLAYER].druid);
 }
 
 Trigger.prototype.enterConditions["druid_is_rescued"] = function(cmpTrigger)
 {
 	// Has the druid been rescued?
-	var cmpOwnershipDruid = Engine.QueryInterface(cmpTrigger.gauls.druid, IID_Ownership);
+	var cmpOwnershipDruid = Engine.QueryInterface(cmpTrigger.playerData[DEFENDER_PLAYER].druid, IID_Ownership);
 	if (!cmpOwnershipDruid || cmpOwnershipDruid.GetOwner() != DEFENDER_PLAYER)
 		return false;
 	return true;
@@ -421,9 +420,17 @@ Trigger.prototype.PlayerCommandAction = function(data)
 
 Trigger.prototype.RangeAction = function(data)
 {
+	//data.added 
+	//data.removed
 	// TODO Use ratio of own to enemy units as criterium.
 	if (data.currentCollection.length < this.TRESHOLD_ENEMY_COUNT_NEARBY_TO_HAVE_SUCCESSFULLY_DEFENDED)
+	{
 		this.leaveConditions["defend_village_against_increasing_force"] = true;
+		this.leaveConditions["defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties"] = true;
+		this.leaveConditions["defend_village_against_increasing_force"] = true;
+		this.leaveConditions["defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties"] = true;
+	}
+	//this.enterConditions["turn_the_tide"] = true;
 	
 };
 
@@ -508,6 +515,14 @@ Trigger.prototype.UNIT_COUNT_REQUIRED_FOR_COUNTER_ATTACK = 100;
 
 // STORY VARIABLES (to be saved in saved games xml)
 cmpTrigger.state = "init";
+cmpTrigger.playerData = {};
+var cmpPlayerMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_PlayerManager);
+for (var playerNum = 0; playerNum < cmpPlayerMan.GetNumPlayers(); ++playerNum)
+{
+	cmpTrigger.playerData[playerNum] = {};
+	cmpTrigger.playerData[playerNum].initial_units = [];
+	cmpTrigger.playerData[playerNum].initial_buildings = [];
+}
 cmpTrigger.isAlreadyAchieved = {};
 cmpTrigger.activeEnemyAttacks = 0;
 
@@ -555,9 +570,21 @@ data = {
 	"players": [1], // only count entities of player 1
 	"maxRange": 40,
 	"requiredComponent": IID_UnitAI, // only count units in range
-	"enabled": true,
+	"enabled": true
 };
 cmpTrigger.RegisterTrigger("OnRange", "RangeAction", data);
+
+var druid_trigger_point = cmpTrigger.GetTriggerPoints("D")[0];
+data = {
+	"entities": [druid_trigger_point],
+	"players": [DEFENDER_PLAYER],
+	"maxRange": 10,
+	"requiredComponent": IID_UnitAI,
+	"enabled": true
+}
+cmpTrigger.RegisterTrigger("OnRange", "spawnDruid", data);
+
+
 
 
 // Termination conditions:
@@ -760,16 +787,134 @@ function challengeDeclined()
 
 
 
+Trigger.prototype.spawnDruid = function(data)
+{
+	var have_allied_ents_come_to_rescue = false;
+	if (data.added)
+		for each (var ent in data.added)
+		{
+			var cmpOwnership = Engine.QueryInterface(ent, IID_Ownership);
+			if (cmpOwnership.GetOwner() == DEFENDER_PLAYER)
+			{
+				have_allied_ents_come_to_rescue = true;
+				break;
+			}
+		}
+	if (!have_allied_ents_come_to_rescue)
+		return false;
+	
+	var chosen_spawn_entity = this.GetTriggerPoints("D")[0];
+	if (!chosen_spawn_entity)
+		warn("No trigger point D: " + chosen_spawn_entity);
+	var druid = {"template": "units/gaul_hero_miraculous", "count": 1};
+	this.playerData[DEFENDER_PLAYER].druid = TriggerHelper.SpawnUnits(chosen_spawn_entity, druid.template, druid.count, DEFENDER_PLAYER)[0];
 
-function spawn_gauls()
+	//this.isAlreadyAchieved["druide_is_rescued"] = true;
+	this.DisableTrigger("OnRange", "spawnDruid");
+
+	return true;
+}
+
+Trigger.prototype.spawn_initial_gauls = function()
+{
+	this.playerData[DEFENDER_PLAYER].initial_buildings = [];
+	this.playerData[DEFENDER_PLAYER].initial_units = [];
+
+	// Find already existing entities on the map:
+	var cmpRangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager); 
+	var entities = cmpRangeMan.GetEntitiesByPlayer(DEFENDER_PLAYER);
+	for each (var ent in entities)
+	{
+		var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
+		if (cmpUnitAI)
+			this.playerData[DEFENDER_PLAYER].initial_units.push(ent);
+		var cmpBuildingAI = Engine.QueryInterface(ent, IID_BuildingAI);
+		if (cmpBuildingAI)
+			this.playerData[DEFENDER_PLAYER].initial_buildings.push(ent);
+	}
+
+	// Spawn buildings and units and add to the default count.
+	var units_to_spawn = [
+			{"template": "units/gaul_infantry_javelinist_a", "count": 10}
+			, {"template": "units/gaul_infantry_slinger_a", "count": 10}
+			, {"template": "units/gaul_infantry_spearman_a", "count": 10}
+
+			// champions
+			, {"template": "units/gaul_champion_infantry", "count": 10}
+			, {"template": "units/gaul_champion_cavalry", "count": 10}
+
+			// heroes
+			, {"template": "units/gaul_hero_asterisk", "count": 10}
+			, {"template": "units/gaul_hero_obelisk", "count": 10}
+	];
+
+	var chosen_spawn_entity;
+	var trigger_points_in_gallic_village = this.GetTriggerPoints("A");
+	var chooseSpawnPointFromBuildings = true;
+	for each (var unit_to_spawn in units_to_spawn)
+	{
+		// choose random spawn point within village or any gallic building:
+		var chosen_spawn_trigger_point = trigger_points_in_gallic_village[Math.round(Math.random() * trigger_points_in_gallic_village.length - 1, 0)];
+		var chosen_spawn_building = this.playerData[DEFENDER_PLAYER].initial_buildings[Math.round(Math.random() * this.playerData[DEFENDER_PLAYER].initial_buildings.length - 1, 0)];
+		
+		if (chooseSpawnPointFromBuildings || !chosen_spawn_trigger_point)
+		{
+			chooseSpawnPointFromBuildings = false;
+			chosen_spawn_entity = chosen_spawn_building;
+		}
+		else if (chosen_spawn_trigger_point)
+		{
+			chooseSpawnPointFromBuildings = true;
+			chosen_spawn_entity = chosen_spawn_trigger_point;
+		}
+		else 
+		{
+			warn("Neither building to be spawned at was defined nor any trigger point A could be found within the Gallic village. => Skipping: " + uneval(unit_to_spawn));
+			continue ;
+		}
+		
+		var spawned_units = TriggerHelper.SpawnUnits(chosen_spawn_entity, unit_to_spawn.template, unit_to_spawn.count, DEFENDER_PLAYER);
+		for each (var spawned_unit in spawned_units)
+			this.playerData[DEFENDER_PLAYER].initial_units.push(spawned_unit);
+
+	}
+
+	// Special units to keep track of individually:
+	// The druid: (spawned onRangeEnter => rescued)
+	//var trigger_point_druid = ; 
+	//this.playerData[DEFENDER_PLAYER].druid = TriggerHelper.SpawnUnits(chosen_spawn_entity, druid.template, druid.count, DEFENDER_PLAYER)[0];
+
+	// asterisk
+	// both common units for now.
+	 
+	// obelisk
+	 
+	// shieldbearers:
+	var ent =  {"template": "units/gaul_shieldbearers", "count": 1};
+	chosen_spawn_entity = this.GetTriggerPoints("K")[0];
+	this.playerData[DEFENDER_PLAYER].shieldbearers = TriggerHelper.SpawnUnits(chosen_spawn_entity, ent.template, ent.count, DEFENDER_PLAYER)[0];
+	this.playerData[DEFENDER_PLAYER].initial_units.push(ent);
+
+	// chieftain:
+	var chieftain =  {"template": "units/gaul_hero_vercingetorix", "count": 1};
+	chosen_spawn_entity = this.GetTriggerPoints("K")[0];
+	this.playerData[DEFENDER_PLAYER].chieftain = TriggerHelper.SpawnUnits(chosen_spawn_entity, chieftain.template, chieftain.count, DEFENDER_PLAYER)[0];
+	this.playerData[DEFENDER_PLAYER].initial_units.push(chieftain);
+	var cmpUnitAI = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].chieftain, IID_UnitAI);
+	cmpUnitAI.PushOrderFront(
+		"Garrison", { "target": this.playerData[DEFENDER_PLAYER].shieldbearers, "force": false }
+	);
+
+	// TODO Spawn buildings.
+	
+}
+
+function spawn_initial_neutral()
 {
 	// TODO
 }
-function spawn_neutral()
-{
-	// TODO
-}
-function spawn_enemy()
+
+function spawn_initial_enemy()
 {
 	// TODO
 }
@@ -826,7 +971,8 @@ function random_enemy_centurio_excursion()
 		
 	PushGUINotification([DEFENDER_PLAYER], "Gallic spy: 'The Roman Centurio is underway to have a look at our village!'");
 	var trigger_point_in_gallic_village = cmpTrigger.GetTriggerPoints("K")[0];
-	cmpTrigger.roman_centurio_in_command.PushOrderFront(
+	var cmpUnitAI = Engine.QueryInterface(cmpTrigger.roman_centurio_in_command, IID_UnitAI);
+	cmpUnitAI.PushOrderFront(
 		"WalkToTargetRange", { "target": trigger_point_in_gallic_village, "min": 0, "max": 300 }
 	);
 
@@ -836,7 +982,8 @@ function random_enemy_centurio_excursion()
 
 Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy = function(data)
 {
-	if (data.triggerPoint != "K" /*&& triggerPointOwner != DEFENDER_PLAYER*/)
+	//if (data.triggerPoint != "K" /*&& triggerPointOwner != DEFENDER_PLAYER*/)
+	if (data.added.indexOf(this.roman_centurio_in_command) == -1)
 		return ;
 
 	// No centurio that is alive and in active command?
@@ -875,7 +1022,8 @@ Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy = function
 
     var cmpEnemyOfCenturioPosition = Engine.QueryInterface(target, IID_Position);
     var pos = cmpEnemyOfCenturioPosition.GetPosition();
-	this.roman_centurio_in_command.PushOrderFront("WalkAndFight", { "x": pos.x, "z": pos.z, "target": target, "force": false });
+	var cmpUnitAI = Engine.QueryInterface(this.roman_centurio_in_command, IID_UnitAI);
+	cmpUnitAI.PushOrderFront("WalkAndFight", { "x": pos.x, "z": pos.z, "target": target, "force": false });
 	
 	PushGUINotification([DEFENDER_PLAYER], "Royal guard: 'The Roman Centurio is attacking our hero: " + target_cmpIdentity.GetGenericName() + "!'");
 }
@@ -995,11 +1143,12 @@ function random_launch_major_enemy_assault()
 		if (!ent.TargetIsAlive(ent))
 			continue;
 		
-		ent.PushOrderFront(
+		var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
+		cmpUnitAI.PushOrderFront(
 			"WalkToTargetRange", { "target": road_trigger_points[road_trigger_points_chosen_index], "min": 0, "max": 20 }
 		);
 		if (cmpTrigger.major_enemy_attack_attacking_entities.indexOf(ent) === -1)
-			cmpTrigger.major_enemy_attack_entities_on_the_way.append(ent); 
+			cmpTrigger.major_enemy_attack_entities_on_the_way.push(ent); 
 
 	}
 
@@ -1024,12 +1173,13 @@ Trigger.prototype.if_attacking_entities_arrived_at_road_waypoint_then_give_furth
 		if (!ent.TargetIsAlive(ent))
 			continue;
 		
-		ent.PushOrderFront(
+		var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
+		cmpUnitAI.PushOrderFront(
 			"WalkToTargetRange", { "target": siege_trigger_points[siege_trigger_point_chosen_index], "min": 0, "max": 20 }
 		);
 		if (cmpTrigger.major_enemy_attack_attacking_entities.indexOf(ent) === -1)
 		{
-			cmpTrigger.major_enemy_attack_attacking_entities.append(ent); 
+			cmpTrigger.major_enemy_attack_attacking_entities.push(ent); 
 			cmpTrigger.major_enemy_attack_entities_on_the_way[ent] = undefined;
 		}
 
@@ -1076,7 +1226,8 @@ Trigger.prototype.if_attacking_entities_arrived_at_siege_point_then_give_further
 
 	    var cmpEnemyOfRomanPosition = Engine.QueryInterface(target, IID_Position);
     	var pos = cmpEnemyOfRomanPosition.GetPosition();
-		ent.PushOrderFront("WalkAndFight", { "x": pos.x, "z": pos.z, "target": target, "force": false });
+		var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
+		cmpUnitAI.PushOrderFront("WalkAndFight", { "x": pos.x, "z": pos.z, "target": target, "force": false });
 	}
 }
 	
@@ -1098,7 +1249,8 @@ function spawn_new_enemy_centurio()
 	
 	for each (var ent in entities)
 	{
-		ent.PushOrderFront(
+		var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
+		cmpUnitAI.PushOrderFront(
 			"WalkToTargetRange", { "target": fortress_trigger_point, "min": 0, "max": 20 }
 		);
 	}
