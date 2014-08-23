@@ -6,6 +6,9 @@
 var INTRUDER_PLAYER = 2;
 var DEFENDER_PLAYER = 1;
 
+var SECOND = 1000;
+
+
 Trigger.prototype.storyline = {};
 Trigger.prototype.storyline[DEFENDER_PLAYER] = {
 
@@ -120,16 +123,27 @@ Trigger.prototype.leaveConditions["defend_village_selector"] = true; // a select
 }*/
 Trigger.prototype.leaveConditions["construction_phase"] = function(cmpTrigger)
 {
-	// TODO count buildings of DEFENDER_PLAYER:
-	var buildings_built_count = 0;
 	var cmpRangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
-	var buildings = cmpRangeMan.GetEntitiesByPlayer(DEFENDER_PLAYER).filter(function(e) { if (Engine.QueryInterface(e, IID_BuildingAI)) return true; return false; });
+	var entities = cmpRangeMan.GetEntitiesByPlayer(DEFENDER_PLAYER);
+	var buildings = entities.filter(function(e) { if (Engine.QueryInterface(e, IID_BuildingAI)) return true; return false; }); 
+	var units = entities.filter(function(e) { if (Engine.QueryInterface(e, IID_UnitAI)) return true; return false; }); 
+	
 	cmpTrigger.initial_building_count = 30; // TODO refine the estimate or derive automatically.
-	buildings_built_count = buildings.length - cmpTrigger.initial_building_count;	
+	var buildings_built_count = buildings.length - cmpTrigger.initial_building_count;	
 	//if (cmpTrigger.vars["construction_phase"].building_count_to_build) 
 	if (buildings_built_count > cmpTrigger.CONSTRUCTION_PHASE_BUILDING_COUNT_TO_CONSTRUCT) 
-		cmpTrigger.isAlreadyAchieved["counter_phase"] = true;
-	return cmpTrigger.isAlreadyAchieved["construction_phase"] === true; 
+		cmpTrigger.isAlreadyAchieved["construction_phase"] = true;
+	
+
+	return cmpTrigger.isAlreadyAchieved["construction_phase"] === true || units.length > this.CONSTRUCTION_PHASE_TRESHOLD_ENEMY_NUMEROUS || now() > this.CONSTRUCTION_PHASE_TIMEOUT;
+}
+
+function now()
+{
+	var cmpTimer = Engine.QueryInterface(SYSTEM_ENTITY, IID_Timer);
+	if (cmpTimer)
+		return cmpTimer.GetTime();
+	return -1;
 }
 
 Trigger.prototype.enterConditions["druide_is_saved"] = function(cmpTrigger)
@@ -443,6 +457,10 @@ cmpTrigger.is_victorious[INTRUDER_PLAYER] = false;
 
 Trigger.prototype.SKIP_STATE_CYCLING_NOTIFICATION_AMOUNT = 10;
 cmpTrigger.skipped_state_cycling_notification_count = 0;
+Trigger.prototype.CONSTRUCTION_PHASE_BUILDING_COUNT_TO_CONSTRUCT = 10;
+Trigger.prototype.CONSTRUCTION_PHASE_TRESHOLD_ENEMY_NUMEROUS = 50;
+Trigger.prototype.CONSTRUCTION_PHASE_TIMEOUT = 120 * SECOND; // 2min
+
 
 
 cmpTrigger.is_debug = true;
