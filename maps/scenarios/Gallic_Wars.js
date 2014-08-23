@@ -324,16 +324,6 @@ Trigger.prototype.TreasureCollected = function(data)
 {
 };
 
-Trigger.prototype.IntervalAction = function(data)
-{
-	this.debug("The OnInterval event happened with the following data:");
-	this.debug(uneval(data));
-	this.numberOfTimerTrigger++;
-	if (this.numberOfTimerTrigger >= this.maxNumberOfTimerTrigger)
-		this.DisableTrigger("OnInterval", "IntervalAction");
-
-}
-
 
 ///////////////////////////
 // CUSTOM TRIGGER ACTIONS (non-event bound)
@@ -396,8 +386,6 @@ Trigger.prototype.UNIT_COUNT_REQUIRED_FOR_COUNTER_ATTACK = 100;
 cmpTrigger.state = "init";
 cmpTrigger.isAlreadyAchieved = {};
 cmpTrigger.activeEnemyAttacks = 0;
-cmpTrigger.numberOfTimerTrigger = 0;
-cmpTrigger.maxNumberOfTimerTrigger = 3; // on interval execution limit. If  the action is triggered more often then the trigger is being deactivated.
 
 // SET UP STORY EVENTS / TRIGGERS
 var data = {"enabled": true};
@@ -411,11 +399,6 @@ cmpTrigger.RegisterTrigger("OnTrainingFinished", "TrainingFinishedAction", data)
 cmpTrigger.RegisterTrigger("OnTrainingQueued", "TrainingQueuedAction", data);
 cmpTrigger.RegisterTrigger("OnTreasureCollected", "TreasureCollected", data);
 
-data.delay = 5000; // after 5 seconds
-data.interval = 10000; // every 10 seconds
-cmpTrigger.numberOfTimerTrigger = 0;
-cmpTrigger.maxNumberOfTimerTrigger = 3; // execute it 3 times maximum
-cmpTrigger.RegisterTrigger("OnInterval", "IntervalAction", data);
 
 // SpawnEnemyAndAttack steering data: (maybe changed during/by the storyline)
 cmpTrigger.enemy_attack_interval = 60000; // every 1 minute
@@ -465,6 +448,8 @@ cmpTrigger.skipped_state_cycling_notification_count = 0;
 cmpTrigger.is_debug = true;
 
 // STORY START
+cmpTrigger.state = "init";
+Trigger.prototype.STATE_CYCLE_DELAY = 100; 
 cmpTrigger.DoAfterDelay(2000, "startStoryline", {});
 
 
@@ -477,14 +462,28 @@ Trigger.prototype.startStoryline = function(data)
 		return;
 
 	// TODO How to determine which role the player has? PlayerID has to be figured out.
-	this.DoAfterDelay(2000, "storylineMachine", this.state);//this.storyline[DEFENDER_PLAYER][this.state]);
+	//this.DoAfterDelay(2000, "storylineMachine", this.state);//this.storyline[DEFENDER_PLAYER][this.state]);
 	//this.storylineMachine(this.state);
+	if (!data)
+		data = {};
+	if (data.enabled == undefined)
+		data.enabled = false;
+	if (data.delay == undefined)
+		data.delay = 0; // launch cycle immediately.
+	if (data.interval == undefined)
+		data.interval = this.STATE_CYCLE_DELAY;
+	
+	this.RegisterTrigger("OnInterval", "storylineMachine", data);
+	
+	this.EnableTrigger("OnInterval", "storylineMachine");
 
 }
 
 // An option can be both a function or another state.
-Trigger.prototype.storylineMachine = function(state)
+Trigger.prototype.storylineMachine = function()
 {
+	var state = this.state;
+	
 	// to be secure (this should be checked prior to entering the state, but in the init this may have been forgotten, so notify of it):
 	if (!this.storyline || !this.storyline[DEFENDER_PLAYER])
 	{
@@ -500,24 +499,25 @@ Trigger.prototype.storylineMachine = function(state)
 	}
 		
 	var state_options =	this.storyline[DEFENDER_PLAYER][state];
-	this.state = state; // <-- used for saved games for proper serialization in the trigger component.
 	this.debug('Examining state: ' + state);
 	
 	
-	var did_enter_a_new_state = false;
 	var is_this_recursion_depth_state_accomplished = false;
 	var is_leave_condition_not_met = true;
 	this.skipped_state_cycling_notification_count = 0;
 	var leaveCondition = this.leaveConditions[state]; // of the current state. 
 	// cycled all options once and still can't leave the state to continue the previous state?
-	while (!is_this_recursion_depth_state_accomplished || is_leave_condition_not_met) 
-	{
+	//while (!is_this_recursion_depth_state_accomplished || is_leave_condition_not_met) 
+	
+	//{
 		// termination condition:
 		if (this.is_victorious[DEFENDER_PLAYER] || this.is_victorious[INTRUDER_PLAYER])
 		{
 			this.terminate_story();
-			this.debug('^^^^^^^ Leaving this state: ' + this.state + ' == ' + state);
+			this.debug('^^^^^^^ Leaving this state: ' + this.state);
 			this.is_story_terminated = true;
+			// cancel the interval timer:
+			this.DisableTrigger("OnInterval", "storylineMachine");
 			return true; // bubble up to terminate the story.
 		}
 		
@@ -530,22 +530,9 @@ Trigger.prototype.storylineMachine = function(state)
 		
 		// Can the next state be entered?
 		var d = {"state": state, "state_options": state_options, "is_leave_condition_not_met": is_leave_condition_not_met}
-		//var is_story_terminated = this.handle_state(d);
-		var state_cycle_delay = 1000; // 1 second per default
-		if (this.state_cycle_delays && this.state_cycle_delays[state]) // <-- alternatively use the enterCondition() function and check for ingame time elapsed and return false when a certain interval is not maintained.
-			state_cycle_delay = +this.state_cycle_delays[state];
-		if (this.lock == undefined || !this.lock["handle_state"])
-		{
-			this.lock["handle_state"] = true;
-			this.DoAfterDelay(state_cycle_delay, "handle_state", d);
-		}
-		else 
-		{
-			// check  back in a few seconds
-			this.DoAfterDelay(1000, "storylineMachine", state);
-			return false;
-		}
-	}
+		var is_story_terminated = this.handle_state(d);
+		//this.DoAfterDelay(state_cycle_delay, "handle_state", d);
+	//}
 	// Bubble back up to the next higher recursion level depth: (i.e. the normal return to a previous state, without termination, i.e. noone is victorious and no remi arranged.)
 	return false;
 }
@@ -553,7 +540,6 @@ Trigger.prototype.storylineMachine = function(state)
 
 Trigger.prototype.handle_state = function(data)
 {
-	this.lock["handle_state"] = false;	
 	var state = data.state;
 	var state_options = data.state_options;
 	var is_leave_condition_not_met = data.is_leave_condition_not_met;
@@ -597,21 +583,11 @@ Trigger.prototype.handle_state = function(data)
 						message();
 				var state_options_next_state = this.storyline[DEFENDER_PLAYER][state_or_action];
 				this.debug('Entering state: ' + state_or_action + ' state_options_next_state: ' + state_options_next_state);
-				//this.state = state_or_action; // <-- done in this function at the beginning now to avoid timing issues as we use DoAfterDelay.
-				//did_enter_a_new_state = true; // in this recursion depth we entered a state 
-			   	//var is_story_terminated // <-- now using this.is_story_terminated to allow the use of a delay.
-				//this.storylineMachine(state_or_action);//options_next_state);
-				this.state_enter_delay = 1000; // TODO
-				this.DoAfterDelay(this.state_enter_delay, "storylineMachine", state_or_action);//state_options_next_state); // check back in 1 second.
-				if (this.is_story_terminated)
-				{
-					this.terminate_story();//finish_story();
-					this.debug('^^^^^^^ Leaving this state: ' + this.state + ' == ' + state);
-					this.is_story_terminated = true;
-					return true;
-				}
-				//else
-				//	return false; <-- commented to allow to continue this recursion depth's state option examination!
+				this.state = state_or_action;
+				var d = {};
+				if (this.state_cycle_delays && this.state_cycle_delays[state]) // <-- alternatively use the enterCondition() function and check for ingame time elapsed and return false when a certain interval is not maintained.
+					d.interval = +this.state_cycle_delays[state_or_action]; // if undefined then the default grips.
+				this.startStoryline(d);
 			}
 			else {
 				if (++this.skipped_state_cycling_notification_count > this.SKIP_STATE_CYCLING_NOTIFICATION_AMOUNT)
