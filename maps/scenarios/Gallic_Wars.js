@@ -1349,7 +1349,7 @@ function counter_strike_recommendation()
 Trigger.prototype.random_phoenician_trader_visit = function()
 {
 	// A trader passes by seldomly:
-	var probability_of_trader_passing_by_closely = .000001;
+	var probability_of_trader_passing_by_closely = .01;
 	if (random_abort(1.0 - probability_of_trader_passing_by_closely))
 		return false;
 	
@@ -1376,10 +1376,10 @@ Trigger.prototype.random_phoenician_trader_visit = function()
 		enemy_entities.push(ent);
 	}
 	
-	var probability_of_trader_entering_harbour = .5;
+	var probability_of_trader_entering_harbour = .75;
 	if (enemy_entities.length > 0)
 	{
-		probability_of_trader_entering_harbour = .001; // => in total it initally was: .01 * .01 = 1/10000 => very seldom
+		probability_of_trader_entering_harbour = .01; // => in total it initally was: .01 * .01 = 1/10000 => very seldom
 		PushGUINotification([DEFENDER_PLAYER], "Lighthouse: 'The trader complains about enemy units near the harbour and will very likely not stop at our dock.'");
 		//return false;
 	}
@@ -1764,7 +1764,7 @@ Trigger.prototype.if_attacking_entities_arrived_at_siege_point_then_give_further
 function random_abort(abort_chance_percent_float_or_int, abort_when_greater_than_this)
 {
 	var abort_chance_percent_integer = 0;
-	if (Math.abs(Math.round(abort_chance_percent_float_or_int, 0)) === Math.abs(abort_chance_percent_float_or_int))
+	if (Math.round(abort_chance_percent_float_or_int, 0) === abort_chance_percent_float_or_int)
 		// no comma => no float!
 		abort_chance_percent_integer = abort_chance_percent_float_or_int;
 	else
