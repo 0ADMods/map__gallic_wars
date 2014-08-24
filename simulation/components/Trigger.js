@@ -41,13 +41,13 @@ Trigger.prototype.RemoveRegisteredTriggerPoint = function(ref, ent)
 {
 	if (!this.triggerPoints[ref])
 	{
-		warn("no trigger points found with ref "+ref);
+		this.debug("no trigger points found with ref "+ref);
 		return;
 	}
 	var i = this.triggerPoints[ref].indexOf(ent);
 	if (i == -1)
 	{
-		warn("entity " + ent + " wasn't found under the trigger points with ref "+ref);
+		this.debug("entity " + ent + " wasn't found under the trigger points with ref "+ref);
 		return;
 	}
 	this.triggerPoints[ref].splice(i, 1);
@@ -80,19 +80,19 @@ Trigger.prototype.RegisterTrigger = function(event, action, data)
 	var eventString = event + "Actions";
 	if (!this[eventString])
 	{
-		warn("Trigger.js: Invalid trigger event \"" + event + "\".") 
+		this.debug("Trigger.js: Invalid trigger event \"" + event + "\".") 
 		return;
 	}
 	if (this[eventString][action])
 	{
 		if (!data.overwrite && !data.overwrite_existing)
 		{
-			warn("Trigger.js: Trigger \"" + action + "\" has been registered before. Aborting...");
+			this.debug("Trigger.js: Trigger \"" + action + "\" has been registered before. Aborting...");
 			return;
 		}
 		else
 		{
-			warn("Trigger.js: Trigger \"" + action + "\" will be overwritten.");
+			this.debug("Trigger.js: Trigger \"" + action + "\" will be overwritten.");
 			this.DisableTrigger(event, action);
 		}
 	}
@@ -108,7 +108,7 @@ Trigger.prototype.RegisterTrigger = function(event, action, data)
 	{
 		if (!data.entities)
 		{
-			warn("Trigger.js: Range triggers should carry extra data");
+			this.debug("Trigger.js: Range triggers should carry extra data");
 			return;
 		}
 		data.queries = [];
@@ -117,7 +117,7 @@ Trigger.prototype.RegisterTrigger = function(event, action, data)
 			var cmpTriggerPoint = Engine.QueryInterface(ent, IID_TriggerPoint);
 			if (!cmpTriggerPoint)
 			{
-				warn("Trigger.js: Range triggers must be defined on trigger points");
+				this.debug("Trigger.js: Range triggers must be defined on trigger points");
 				continue;
 			}
 			data.queries.push(cmpTriggerPoint.RegisterRangeTrigger(action, data));
@@ -134,7 +134,7 @@ Trigger.prototype.DisableTrigger = function(event, action)
 	var eventString = event + "Actions";
 	if (!this[eventString][action])
 	{
-		warn("Trigger.js: Disabling unknown trigger");
+		this.debug("Trigger.js: Disabling unknown trigger");
 		return;
 	}
 	var data = this[eventString][action];
@@ -151,7 +151,7 @@ Trigger.prototype.DisableTrigger = function(event, action)
 	{
 		if (!data.queries)
 		{
-			warn("Trigger.js: Range query wasn't set up before trying to disable it.");
+			this.debug("Trigger.js: Range query wasn't set up before trying to disable it.");
 			return;
 		}
 		var cmpRangeManager = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
@@ -168,7 +168,7 @@ Trigger.prototype.EnableTrigger = function(event, action)
 	var eventString = event + "Actions";
 	if (!this[eventString][action])
 	{
-		warn("Trigger.js: Enabling unknown trigger");
+		this.debug("Trigger.js: Enabling unknown trigger");
 		return;
 	}
 	var data = this[eventString][action];
@@ -179,7 +179,7 @@ Trigger.prototype.EnableTrigger = function(event, action)
 			return;
 		if (!data.interval)
 		{
-			warn("Trigger.js: An interval trigger should have an intervel in its data")
+			this.debug("Trigger.js: An interval trigger should have an intervel in its data")
 			return;
 		}
 		var cmpTimer = Engine.QueryInterface(SYSTEM_ENTITY, IID_Timer);
@@ -190,7 +190,7 @@ Trigger.prototype.EnableTrigger = function(event, action)
 	{
 		if (!data.queries)
 		{
-			warn("Trigger.js: Range query wasn't set up before");
+			this.debug("Trigger.js: Range query wasn't set up before");
 			return;
 		}
 		var cmpRangeManager = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
@@ -215,7 +215,7 @@ Trigger.prototype.CallEvent = function(event, data)
 	
 	if (!this[eventString])
 	{
-		warn("Trigger.js: Unknown trigger event called:\"" + event + "\".");
+		this.debug("Trigger.js: Unknown trigger event called:\"" + event + "\".");
 		return;
 	}
 	
@@ -268,7 +268,7 @@ Trigger.prototype.DoAction = function(msg)
 	if (this[msg.action])
 		this[msg.action](msg.data || null);
 	else
-		warn("Trigger.js: called a trigger action '" + msg.action + "' that wasn't found");
+		this.debug("Trigger.js: called a trigger action '" + msg.action + "' that wasn't found");
 };
 
 Engine.RegisterSystemComponentType(IID_Trigger, "Trigger", Trigger);

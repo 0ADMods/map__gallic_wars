@@ -289,6 +289,7 @@ Trigger.prototype.enterConditions["druid_is_rescued"] = function(cmpTrigger)
 
 Trigger.prototype.enterConditions["turn_the_tide"] = function(cmpTrigger)
 {
+	warn('leader: ' + cmpTrigger.playerData[INTRUDER_PLAYER].leader + ' isAlive: ' + Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader));
 	if (cmpTrigger.playerData[INTRUDER_PLAYER] && cmpTrigger.playerData[INTRUDER_PLAYER].leader && Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader))
 		return false;
 
