@@ -116,7 +116,7 @@ Trigger.prototype.messages["village_is_fallen"] = function()
 	
 }
 
-Trigger.prototype.messages["turn_the_tide"] = function()
+Trigger.prototype.messages["turning_the_tide"] = function()
 {
 	PushGUINotification(
 		[DEFENDER_PLAYER], 
