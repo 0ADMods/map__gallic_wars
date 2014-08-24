@@ -271,7 +271,7 @@ Trigger.prototype.enterConditions["druid_is_dead"] = function(cmpTrigger)
 	if (!cmpTrigger.playerData[DEFENDER_PLAYER] || !cmpTrigger.playerData[DEFENDER_PLAYER].druid)
 		return false;
 	
-	var cmpUnitAi = Engine.QueryInterface(cmpTrigger.playerData[DEFENDER_PLAYER].druid);
+	var cmpUnitAi = Engine.QueryInterface(cmpTrigger.playerData[DEFENDER_PLAYER].druid, IID_UnitAI);
 	return !cmpUnitAi.TargetIsAlive(cmpTrigger.playerData[DEFENDER_PLAYER].druid);
 }
 
