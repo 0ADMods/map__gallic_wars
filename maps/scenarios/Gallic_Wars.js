@@ -301,7 +301,7 @@ Trigger.prototype.enterConditions["turn_the_tide"] = function(cmpTrigger)
 	var enemy_entities = cmpRangeMan.GetEntitiesByPlayer(INTRUDER_PLAYER);
 	var enemy_units = enemy_entities.filter(function(e) { if (Engine.QueryInterface(e, IID_UnitAI)) return true; return false; });
 
-	if (units.length < 10 * enemy_units)
+	if (units.length < 10 * enemy_units.length)
 		return false;
 
 	// Count active enemy attacks. If there are any active attacks, then no counter attack can be ordered.
