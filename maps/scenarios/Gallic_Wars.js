@@ -1348,8 +1348,8 @@ function counter_strike_recommendation()
 Trigger.prototype.random_phoenician_trader_visit = function()
 {
 	// A trader passes by seldomly:
-	var probability_of_trader_passing_by_closely = .0001;
-	if (random_abort(1 - probability_of_trader_passing_by_closely))
+	var probability_of_trader_passing_by_closely = .000001;
+	if (random_abort(1.0 - probability_of_trader_passing_by_closely))
 		return false;
 	
 	// The trader doesn't want to enter the harbour if fighting is close. (give the player a motivation to keep the harbour area clear of fighting to increase the probability that the trader will come by.)
@@ -1378,7 +1378,7 @@ Trigger.prototype.random_phoenician_trader_visit = function()
 	var probability_of_trader_entering_harbour = .5;
 	if (enemy_entities.length > 0)
 	{
-		probability_of_trader_entering_harbour = .001; // => in total: .01 * .01 = 1/10000 => very seldom
+		probability_of_trader_entering_harbour = .001; // => in total it initally was: .01 * .01 = 1/10000 => very seldom
 		PushGUINotification([DEFENDER_PLAYER], "Lighthouse: 'The trader complains about enemy units near the harbour and will very likely not stop at our dock.'");
 		//return false;
 	}
@@ -1517,6 +1517,8 @@ Trigger.prototype.DisappearOnArrival = function(data)
 // Use this trading function instead of the one that cmpTrader provides:
 Trigger.prototype.PerformTrade = function(currentHarbour) // <-- every gaul can trade (UNUSED)
 {
+	if (!currentHarbour)
+		return false;
 	var tradable_goods = ["metal", "wood", "food", "stone"];
 	var goods = {};
 	// get player good preference:
@@ -1539,6 +1541,8 @@ Trigger.prototype.PerformTrade = function(currentHarbour) // <-- every gaul can 
 			// a hero or champion or building can still trade.
 			var cmpBuildingAI = Engine.QueryInterface(currentHarbour, IID_BuildingAI); 
 			var cmpIdentity = Engine.QueryInterface(currentHarbour, IID_Identity);
+			if (!cmpIdentity)
+				return false;
 			var succeedingEntityClass;
 			var classes_able_to_persuade_the_trader = ["Champion", "Hero", "Dock"];
 			for each (var persuading_class in classes_able_to_persuade_the_trader)
