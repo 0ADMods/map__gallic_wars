@@ -88,7 +88,9 @@
   "TriggerScripts": [
     "scripts/TriggerHelper.js",
     "scenarios/Gallic_Wars.js"
-  ]
+  ],
+  "Preview": "gallic_wars.jpg",
+  "RevealMap": false
 }
 ]]></ScriptSettings>
 	<Entities>
