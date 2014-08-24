@@ -1,0 +1,14 @@
+{
+	"genericName": "Roman mobile army",
+	"description": "Roman buildings don't decay in neutral territory.",
+	"cost": {"food": 0, "wood": 0, "stone": 0, "metal": 0},
+	"auto-research": true,
+	"requirements": {"all": [{"class": "Unit", "number": 3}, {"any": [{"civ": "rome"},{"civ": "brit"}]}, {"tech": "phase_village"}]},
+	"requirementsTooltip": "Researched by default for Roman buildings during the Gallic Wars.",
+	"icon": "blocks_three.png",
+	"researchTime": 0,
+	"tooltip": "Turn off decay for Roman buildings.",
+	"modifications": [{"value": "TerritoryDecay/HealthDecayRate", "multiply": 0}],
+	"affects": ["Palisade Fortress Tower Rome+Structure"],
+	"soundComplete": "interface/alarm/alarm_upgradearmory.xml"
+}
