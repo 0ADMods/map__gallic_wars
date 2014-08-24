@@ -1511,6 +1511,7 @@ Trigger.prototype.DisappearOnArrival = function(data)
 // Use this trading function instead of the one that cmpTrader provides:
 Trigger.prototype.PerformTrade = function(currentHarbour) // <-- every gaul can trade (UNUSED)
 {
+	var tradable_goods = ["metal", "wood", "food", "stone"];
 	var goods = {};
 	// get player good preference:
 	var nextGoods; 
@@ -1519,7 +1520,7 @@ Trigger.prototype.PerformTrade = function(currentHarbour) // <-- every gaul can 
 		nextGoods = cmpPlayer.GetNextTradingGoods();
 
 	if (!nextGoods)
-		nextGoods = "metal";
+		nextGoods = pickRandomly(tradable_goods);
 
 	goods.type = nextGoods;
 	var TRADER_GOOD_AMOUNT_MAX = 10000;
