@@ -301,7 +301,7 @@ Trigger.prototype.enterConditions["turn_the_tide"] = function(cmpTrigger)
 	var enemy_entities = cmpRangeMan.GetEntitiesByPlayer(INTRUDER_PLAYER);
 	var enemy_units = enemy_entities.filter(function(e) { if (Engine.QueryInterface(e, IID_UnitAI)) return true; return false; });
 
-	if (units.length < 2 * enemy_units)
+	if (units.length < 10 * enemy_units)
 		return false;
 
 	// Count active enemy attacks. If there are any active attacks, then no counter attack can be ordered.
@@ -1080,9 +1080,9 @@ Trigger.prototype.spawn_initial_enemy = function(data)
 Trigger.prototype.spawn_new_enemy_centurio = function()
 {
 
-	var ent =  {"template": "units/rome_centurio_imperial", "count": 1};
+	var ent_data =  {"template": "units/rome_centurio_imperial", "count": 1};
 	var western_most_road_trigger_point = cmpTrigger.GetTriggerPoints("G")[0];
-	var entities = TriggerHelper.SpawnUnits(western_most_road_trigger_point, ent.template, ent.count, INTRUDER_PLAYER);
+	var entities = TriggerHelper.SpawnUnits(western_most_road_trigger_point, ent_data.template, ent_data.count, INTRUDER_PLAYER);
 	this.playerData[INTRUDER_PLAYER].leader = entities[0];
 	
 	var fortress_trigger_point = cmpTrigger.GetTriggerPoints("F")[0]; 
@@ -1115,7 +1115,8 @@ Trigger.prototype.SpawnEnemyAndAttack = function(data)
 	{
 		var where = pickRandomly(spawn_points);
 		where = pickRandomly(where);
-		
+			
+		// compose armies.
 		var composition_variant = pickRandomly(this.compositions);
 		var unit_to_spawn = pickRandomly(composition_variant);//.units);
 		var spawned_units_of_same_type = TriggerHelper.SpawnUnits(where, unit_to_spawn.template.replace("{Civ}", "rome"), unit_to_spawn.count, INTRUDER_PLAYER);
@@ -1124,7 +1125,6 @@ Trigger.prototype.SpawnEnemyAndAttack = function(data)
 			spawned_units.push(spawned_unit);
 	}
 
-	// compose armies.
 	 
 	// Send them to attack random nearby targets.
 	for each (var ent in spawned_units) 
@@ -1133,21 +1133,21 @@ Trigger.prototype.SpawnEnemyAndAttack = function(data)
 		if (!cmpUnitAi)
 			continue;
 		var range_min = 0; 
-		var range_max = 500;
-		var entities_nearby = getNearbyEnemies(ent, range_min, range_max);
+		var range_max = 1500;
+		var entities_nearby = getNearbyEnemies(ent, range_min, range_max, IID_Position);
 		
 		var enemy_entities = [];
-		for each (var ent in entities_nearby)
+		for each (var enemy in entities_nearby)
 		{
-	        var cmpIdentity = Engine.QueryInterface(ent, IID_Identity);
-			var cmpOwnership = Engine.QueryInterface(ent, IID_Ownership);
+	        var cmpIdentity = Engine.QueryInterface(enemy, IID_Identity);
+			var cmpOwnership = Engine.QueryInterface(enemy, IID_Ownership);
 			var playerMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_PlayerManager);
 			var cmpPlayer = Engine.QueryInterface(playerMan.GetPlayerByID(cmpOwnership.GetOwner()), IID_Player);
 			// skip own and ally units: 
 			if (cmpOwnership.GetOwner() == INTRUDER_PLAYER || cmpPlayer.IsAlly(INTRUDER_PLAYER))
 				continue;
 			// it's an enemy:
-			enemy_entities.push(ent);
+			enemy_entities.push(enemy);
 		}
 		var cmpUnitMotion = Engine.QueryInterface(ent, IID_UnitMotion);
 		if (!cmpUnitMotion)
@@ -1304,6 +1304,12 @@ Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy = function
 
 function getNearbyEnemies(source, range_min, range_max)
 {
+	return getNearbyEnemiesWithComponent(source, range_min, range_max, IID_Identity);
+}
+
+	
+function getNearbyEnemiesWithComponent(source, range_min, range_max, component)
+{
 	// Find units that are enemies of the source (here: Roman centurio):
 	// 1) determine enemy players:
 	var players = [];
@@ -1319,7 +1325,7 @@ function getNearbyEnemies(source, range_min, range_max)
 	}
 	
 	var rangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
-	var nearby = rangeMan.ExecuteQuery(source, range_min, range_max, players, IID_Identity); //<-- only those with Identity. (Note: RangeManager seems to be C++ component/entity only.)
+	var nearby = rangeMan.ExecuteQuery(source, range_min, range_max, players, component); //<-- only those with Identity. (Note: RangeManager seems to be C++ component/entity only.)
 	return nearby;
 }
 
