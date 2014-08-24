@@ -3,7 +3,7 @@
 	"description": "Roman buildings don't decay in neutral territory.",
 	"cost": {"food": 0, "wood": 0, "stone": 0, "metal": 0},
 	"auto-research": true,
-	"requirements": {"all": [{"class": "Unit", "number": 3}, {"any": [{"civ": "rome"},{"civ": "brit"}]}, {"tech": "phase_village"}]},
+	"requirements": {"all": [{"any": [{"civ": "rome"}]}]},
 	"requirementsTooltip": "Researched by default for Roman buildings during the Gallic Wars.",
 	"icon": "blocks_three.png",
 	"researchTime": 0,
