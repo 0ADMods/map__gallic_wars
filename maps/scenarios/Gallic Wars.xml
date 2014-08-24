@@ -33,9 +33,9 @@
 		</Postproc>
 	</Environment>
 	<Camera>
-		<Position x="709.534" y="102.74" z="225.992"/>
-		<Rotation angle="-1.20133"/>
-		<Declination angle="0.469238"/>
+		<Position x="350.292" y="92.7795" z="388.033"/>
+		<Rotation angle="0"/>
+		<Declination angle="0.610865"/>
 	</Camera>
 	<ScriptSettings><![CDATA[
 {
@@ -49,6 +49,18 @@
         "b": 0,
         "g": 128,
         "r": 0
+      },
+      "StartingCamera": {
+        "Position": {
+          "x": 350.292,
+          "y": 22.4886,
+          "z": 486.331
+        },
+        "Rotation": {
+          "x": 35,
+          "y": 0,
+          "z": 0
+        }
       }
     },
     {
@@ -57,8 +69,21 @@
         "b": 20,
         "g": 20,
         "r": 150
+      },
+      "StartingCamera": {
+        "Position": {
+          "x": 152.782,
+          "y": 21.783,
+          "z": 130.295
+        },
+        "Rotation": {
+          "x": 35,
+          "y": 21.2291,
+          "z": -0.00000228982
+        }
       }
-    }
+    },
+    {}
   ],
   "TriggerScripts": [
     "scripts/TriggerHelper.js",

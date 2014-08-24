@@ -3,8 +3,34 @@
  *  and when the storyline reaches a certain point. 
  *  The recursion approach in the storyline machine has the benefit that old states which have not been finished yet, are properly executed until all actions have been executed or a new state has been entered or the leave condition is true when all options have been cycled which makes the storyline dive up, i.e. reentering the previous state to finish that one too. Of course a return statement by the storyline machine has to bubble up and lead to an immediate stop. 
  */
-var INTRUDER_PLAYER = 2;
+
+
+var cmpPlayerManager = Engine.QueryInterface(SYSTEM_ENTITY, IID_PlayerManager);
+
+var GAIA_PLAYER = 0;
 var DEFENDER_PLAYER = 1;
+var INTRUDER_PLAYER = 2;
+var TRADER_PLAYER = 3;
+Trigger.prototype.addPlayer = function(num)
+{
+	// Add player entity to engine
+	// TODO: Get player template name from civ data
+	var entID = Engine.AddEntity("special/player");
+	var cmpPlayer = Engine.QueryInterface(entID, IID_Player);
+	if (!cmpPlayer)
+		throw("Player.js: Error creating player entity "+num);
+
+	cmpPlayer.SetPlayerID(num);
+
+	// Add player to player manager
+	cmpPlayerManager.AddPlayer(entID);
+
+	// Properly autoresearch techs on init.
+	var cmpTechManager = Engine.QueryInterface(entID, IID_TechnologyManager);
+	if (cmpTechManager !== undefined)
+		cmpTechManager.UpdateAutoResearch();
+
+}
 
 var SECOND = 1000;
 
@@ -140,6 +166,7 @@ Trigger.prototype.state_cycle_delays = {};
 //======================================================================================
 Trigger.prototype.leaveConditions = {};
 Trigger.prototype.enterConditions = {};
+Trigger.prototype.enterConditionsPrevious = {};
 
 Trigger.prototype.leaveConditions["defend_village_selector"] = true; // a selector always allows to exit this state (it's the purpose of a selector!)
 //Trigger.prototype.leaveConditions["defend_village_against_increasing_force"] = false; // rather keep control to enterCondition whereever possible. Especially if subsequent states are achievements, which have to to be entered once they are achieved (no matter the leaveCondition).
@@ -164,7 +191,7 @@ Trigger.prototype.leaveConditions["construction_phase"] = function(cmpTrigger)
 		cmpTrigger.isAlreadyAchieved["construction_phase"] = true;
 	
 
-	return cmpTrigger.isAlreadyAchieved["construction_phase"] === true || units.length > cmpTrigger.CONSTRUCTION_PHASE_TRESHOLD_ENEMY_NUMEROUS || now() > cmpTrigger.CONSTRUCTION_PHASE_TIMEOUT;
+	return cmpTrigger.isAlreadyAchieved["construction_phase"] && cmpTrigger.isAlreadyAchieved["construction_phase"] === true || units.length > cmpTrigger.CONSTRUCTION_PHASE_TRESHOLD_ENEMY_NUMEROUS || now() > cmpTrigger.CONSTRUCTION_PHASE_TIMEOUT;
 }
 
 function now()
@@ -245,7 +272,8 @@ Trigger.prototype.enterConditions["defend_village_against_decreasing_force_galli
 
 Trigger.prototype.enterConditions["druid_is_dead"] = function(cmpTrigger)
 {
-	return !cmpTrigger.gauls || !cmpTrigger.playerData[DEFENDER_PLAYER].druid || !cmpTrigger.playerData[DEFENDER_PLAYER].druid.TargetIsAlive(cmpTrigger.playerData[DEFENDER_PLAYER].druid);
+	return !cmpTrigger.playerData[DEFENDER_PLAYER] || !cmpTrigger.playerData[DEFENDER_PLAYER].druid
+		|| !cmpTrigger.playerData[DEFENDER_PLAYER].druid.TargetIsAlive(cmpTrigger.playerData[DEFENDER_PLAYER].druid);
 }
 
 Trigger.prototype.enterConditions["druid_is_rescued"] = function(cmpTrigger)
@@ -418,19 +446,54 @@ Trigger.prototype.PlayerCommandAction = function(data)
 	}
 };
 
+Trigger.prototype.TRESHOLD_OWN_TO_NEARBY_ENEMY_MIN_RATIO_TO_HAVE_SUCCESSFULLY_DEFENDED = 10; // ten times as many units
 Trigger.prototype.RangeAction = function(data)
 {
 	//data.added 
 	//data.removed
-	// TODO Use ratio of own to enemy units as criterium.
-	if (data.currentCollection.length < this.TRESHOLD_ENEMY_COUNT_NEARBY_TO_HAVE_SUCCESSFULLY_DEFENDED)
+	// Use ratio of own to enemy units as criterium:
+	var entities = data.currentCollection; 
+	var enemies = [];
+	var neutral = [];
+	var own = [];
+	var allied = [];
+	for each (var ent in entities)
 	{
-		this.leaveConditions["defend_village_against_increasing_force"] = true;
-		this.leaveConditions["defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties"] = true;
-		this.leaveConditions["defend_village_against_increasing_force"] = true;
-		this.leaveConditions["defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties"] = true;
+		var cmpUnitAI = Engine.QueryInterface(ent, IID_Ownership);
+		if (!cmpUnitAI)
+			continue;
+		
+		var cmpOwnership = Engine.QueryInterface(ent, IID_Ownership);
+		if (!cmpOwnership)
+			continue;
+		var playerMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_PlayerManager);
+		var cmpPlayer = Engine.QueryInterface(playerMan.GetPlayerByID(cmpOwnership.GetOwner()), IID_Player);
+		
+		if (cmpOwnership.GetOwner() == DEFENDER_PLAYER)
+			own.push(ent);
+		else if (cmpPlayer.IsAlly(DEFENDER_PLAYER))
+			allied.push(ent);
+		else if (cmpPlayer.IsNeutral(DEFENDER_PLAYER))
+			neutral.push(ent);
+		else 
+			enemies.push(ent);
 	}
-	//this.enterConditions["turn_the_tide"] = true;
+	
+	if ((allied.length + own.length) / enemies.length > this.TRESHOLD_OWN_TO_NEARBY_ENEMY_MIN_RATIO_TO_HAVE_SUCCESSFULLY_DEFENDED)
+	{
+		this.enterConditionsPrevious["turn_the_tide"] = this.enterConditions["turn_the_tide"];
+		this.enterConditions["turn_the_tide"] = true;
+		//this.leaveConditions["defend_village_against_increasing_force"] = true;
+		//this.leaveConditions["defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties"] = true;
+		//this.leaveConditions["defend_village_against_increasing_force"] = true;
+		//this.leaveConditions["defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties"] = true;
+	}
+	else
+	{
+		// restore old enterCondition examination.
+		this.enterConditions["turn_the_tide"] = this.enterConditionsPrevious["turn_the_tide"]
+	}
+
 	
 };
 
@@ -567,8 +630,8 @@ cmpTrigger.enemy_attack_compositions = [
 var entities = cmpTrigger.GetTriggerPoints("A");
 data = {
 	"entities": entities, // central points to calculate the range circles
-	"players": [1], // only count entities of player 1
-	"maxRange": 40,
+	"players": [INTRUDER_PLAYER, DEFENDER_PLAYER], // only count entities of player 1
+	"maxRange": 300,
 	"requiredComponent": IID_UnitAI, // only count units in range
 	"enabled": true
 };
@@ -592,6 +655,9 @@ cmpTrigger.is_victorious = [];
 cmpTrigger.is_victorious[DEFENDER_PLAYER] = false;
 cmpTrigger.is_victorious[INTRUDER_PLAYER] = false;
 
+cmpTrigger.traders_on_their_way = [];
+cmpTrigger.disappearOrderQueue = [];
+
 Trigger.prototype.SKIP_STATE_CYCLING_NOTIFICATION_AMOUNT = 10;
 cmpTrigger.skipped_state_cycling_notification_count = 0;
 Trigger.prototype.CONSTRUCTION_PHASE_BUILDING_COUNT_TO_CONSTRUCT = 10;
@@ -604,7 +670,7 @@ cmpTrigger.is_debug = true;
 
 // STORY START
 cmpTrigger.state = "init";
-Trigger.prototype.STATE_CYCLE_DELAY = 1000;
+Trigger.prototype.STATE_CYCLE_DELAY = 5 * SECOND;
 cmpTrigger.DoAfterDelay(2000, "startStoryline", {});
 
 
@@ -760,6 +826,11 @@ Trigger.prototype.handle_state = function(data)
 			this[state_or_action]();
 			//this.DoAfterDelay(1000, state_or_action, {});
 		}
+		else if (state_or_action && typeof state_or_action == 'function') // not recommended and non-functional without eval(). TODO check for global function names if possible?
+		{
+			this.debug('Function: ' + state_or_action);
+			state_or_action();
+		}
 		else
 		{
 			this.debug('Neither state nor action: ' + state_or_action + ' => skipping');
@@ -844,8 +915,8 @@ Trigger.prototype.spawn_initial_gauls = function()
 			, {"template": "units/gaul_champion_cavalry", "count": 10}
 
 			// heroes
-			, {"template": "units/gaul_hero_asterisk", "count": 10}
-			, {"template": "units/gaul_hero_obelisk", "count": 10}
+			, {"template": "units/gaul_hero_asterisk", "count": 2}
+			, {"template": "units/gaul_hero_obelisk", "count": 2}
 	];
 
 	var chosen_spawn_entity;
@@ -854,8 +925,8 @@ Trigger.prototype.spawn_initial_gauls = function()
 	for each (var unit_to_spawn in units_to_spawn)
 	{
 		// choose random spawn point within village or any gallic building:
-		var chosen_spawn_trigger_point = trigger_points_in_gallic_village[Math.round(Math.random() * trigger_points_in_gallic_village.length - 1, 0)];
-		var chosen_spawn_building = this.playerData[DEFENDER_PLAYER].initial_buildings[Math.round(Math.random() * this.playerData[DEFENDER_PLAYER].initial_buildings.length - 1, 0)];
+		var chosen_spawn_trigger_point = trigger_points_in_gallic_village[Math.round(Math.random() * (trigger_points_in_gallic_village.length - 1), 0)];
+		var chosen_spawn_building = this.playerData[DEFENDER_PLAYER].initial_buildings[Math.round(Math.random() * (this.playerData[DEFENDER_PLAYER].initial_buildings.length - 1), 0)];
 		
 		if (chooseSpawnPointFromBuildings || !chosen_spawn_trigger_point)
 		{
@@ -919,6 +990,14 @@ function spawn_initial_enemy()
 	// TODO
 }
 
+
+function pickRandomly(list)
+{
+	if (!list)
+		return undefined;
+
+	return list[Math.round(Math.random() * (list.length - 1), 0)];
+}
 
 function enable_trigger_that_launches_enemy_attacks()
 {
@@ -1046,7 +1125,7 @@ function getNearbyEnemies(source, range_min, range_max)
 	}
 	
 	var rangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
-	var nearby = rangeMan.ExecuteQuery(source, 0, range, players, IID_Identity); //<-- only those with Identity. (Note: RangeManager seems to be C++ component/entity only.)
+	var nearby = rangeMan.ExecuteQuery(source, range_min, range_max, players, IID_Identity); //<-- only those with Identity. (Note: RangeManager seems to be C++ component/entity only.)
 	return nearby;
 }
 
@@ -1066,9 +1145,224 @@ function counter_strike_recommendation()
 	
 }
 
-function random_phoenician_trader_visit()
+Trigger.prototype.random_phoenician_trader_visit = function()
 {
+	// A trader passes by seldomly:
+	var probability_of_trader_passing_by_closely = .01;
+	if (random_abort(1 - probability_of_trader_passing_by_closely))
+		return false;
+	
+	// The trader doesn't want to enter the harbour if fighting is close. (give the player a motivation to keep the harbour area clear of fighting to increase the probability that the trader will come by.)
+	var range_min = 0; 
+	var range_max = 400; // keep  400m around the harbour free from fighting.
+	var entities_nearby = getNearbyEnemies(this.GetTriggerPoints("B")[0], range_min, range_max);
+	
+	var enemy_entities = [];
+	for each (var ent in entities_nearby)
+	{
+        var cmpIdentity = Engine.QueryInterface(ent, IID_Identity);
+		// Don't count buildings as they won't repell the trader if there are no mobile units that could capture the ship.
+		var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI); 
+		if (!cmpUnitAI) 
+			continue;
+		var cmpOwnership = Engine.QueryInterface(ent, IID_Ownership);
+		var playerMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_PlayerManager);
+		var cmpPlayer = Engine.QueryInterface(playerMan.GetPlayerByID(cmpOwnership.GetOwner()), IID_Player);
+		// skip inhabitants of the gallic village as well as allies: 
+		if (cmpOwnership.GetOwner() == DEFENDER_PLAYER || cmpPlayer.IsAlly(DEFENDER_PLAYER))
+			continue;
+		// it's an enemy:
+		enemy_entities.push(ent);
+	}
+	
+	var probability_of_trader_entering_harbour = .75;
+	if (enemy_entities.length > 0)
+	{
+		probability_of_trader_entering_harbour = .01; // => in total: .01 * .01 = 1/10000 => very seldom
+		PushGUINotification([DEFENDER_PLAYER], "Lighthouse: 'The trader complains about enemy units near the harbour and will very likely not stop at our dock.'");
+		//return false;
+	}
+	
+
+	// The Phoenician trader enters the harbour with a probability of 1%.
+	if (random_abort(1 - probability_of_trader_entering_harbour))
+		return false;
+
+	var possible_spawn_points = this.GetTriggerPoints("C");
+	if (!possible_spawn_points)
+	{
+		warn('No trigger points C for spawning the phoenician trader.');
+		return false;
+	}
+	
+	var chosen_spawn_entity = pickRandomly(possible_spawn_points);
+	var traders = ["units/cart_ship_merchant", "units/sele_ship_merchant", "units/maur_ship_merchant", "units/iber_ship_merchant"];
+	var trader = TriggerHelper.SpawnUnits(chosen_spawn_entity, pickRandomly(traders), 1, TRADER_PLAYER)[0];
+
+	//if (cmpPlayerManager.GetNumPlayers() < TRADER_PLAYER)
+	//	this.addPlayer(TRADER_PLAYER); // as this one is not pre-placed in the map. TODO somewhat strange result: conflict and things.
+
+	// forge alliance:
+	var cmpTraderPlayer = Engine.QueryInterface(cmpPlayerManager.GetPlayerByID(TRADER_PLAYER), IID_Player);
+	cmpTraderPlayer.SetAlly(DEFENDER_PLAYER);
+	var cmpDefenderPlayer = Engine.QueryInterface(cmpPlayerManager.GetPlayerByID(DEFENDER_PLAYER), IID_Player);
+	cmpDefenderPlayer.SetAlly(TRADER_PLAYER);
+
+
+	var cmpUnitAI = Engine.QueryInterface(trader, IID_UnitAI);
+	var harbour = this.GetTriggerPoints("B")[0];
+	var cmpUnitMotion = Engine.QueryInterface(trader, IID_UnitMotion);
+	cmpUnitMotion.MoveToTargetRange(harbour, 0, 10);
+		//PushOrderFront(
+	//	"MoveToTargetRange", { "target": this.GetTriggerPoints("B")[0], "min": 0, "max": 40 }
+	//);
+	if (this.traders_on_their_way.indexOf(trader) == -1)
+		this.traders_on_their_way.push(trader);
+	
+	var d = {};
+	d = {
+		"entities": [harbour], //<-- this is suboptimal and not general enough! TODO use one trigger point type of owner gaia as fixed disappear point, where units disappear if they enter its set range?
+		"players": [TRADER_PLAYER],
+		"maxRange": 20,
+		"requiredComponent": IID_UnitAI,
+		"enabled": true
+	}
+	cmpTrigger.RegisterTrigger("OnRange", "HarbourArrival", d);
+
+
+	return true;
 }
+
+	
+Trigger.prototype.HarbourArrival = function(data)
+{
+	var ents = data.added;
+	if (!data.added)
+		ents = data.currentCollection;
+	if (!ents)	
+		return false;
+	
+	var ship_spawn_entities = this.GetTriggerPoints("C"); 
+
+	for each (var ent in ents)
+	{
+		var ent_key = this.traders_on_their_way.indexOf(ent);
+		if (ent_key === -1)
+			continue;
+		
+		var cmpRangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
+		var entities = cmpRangeMan.GetEntitiesByPlayer(DEFENDER_PLAYER);
+		// TODO choose nearby entity if performance permits and it should as trading is seldom but should help a lot.
+		// Note: As side-effect this also increases the chance to persuade a trader to trade despite the Gallic Wars by positioning Gaul heroes or champions close to the dock.
+		var trading_entity = pickRandomly(entities);
+		this.PerformTrade(trading_entity);
+	
+		// move the ship back to where it came from or to a random trigger point on the sea:
+		var target_point = pickRandomly(ship_spawn_entities);
+		var cmpUnitMotion = Engine.QueryInterface(ent, IID_UnitMotion);
+		cmpUnitMotion.MoveToTargetRange(target_point, 0, 15);
+		
+		// mark for disappearance:
+		if (this.disappearOrderQueue.indexOf(ent) === -1)
+			this.disappearOrderQueue.push(ent);
+		
+		this.traders_on_their_way[ent_key] = undefined; // <-- delete/unset
+		
+	}
+	
+//TODO make triggers reregisterable?	
+//	if (this.traders_on_their_way.length < 1)
+//		cmpTrigger.DisableTrigger("OnRange", "HarbourArrival");
+		
+	var d = {};
+	d = {
+		"entities": ship_spawn_entities, //<-- this is still suboptimal if the DisappearOnArrival is registered with the same event again but with different entities (overwriting the ones we registered/set here). TODO Maybe use one trigger point type of owner gaia as fixed disappear point, where units disappear if they enter its set range?
+		"players": [TRADER_PLAYER],
+		"maxRange": 20,
+		"requiredComponent": IID_UnitAI,
+		"enabled": true
+	}
+	cmpTrigger.RegisterTrigger("OnRange", "DisappearOnArrival", d);
+
+
+	return true;
+}
+
+Trigger.prototype.DisappearOnArrival = function(data)
+{
+	var entities = data.added;
+	if (!entities)
+		entities = data.currentCollection;
+	if (!entities)
+		return false;
+
+	for each (var ent in entities)
+	{
+		var index = this.disappearOrderQueue.indexOf(ent);
+		if (index !== -1)
+		{
+			var cmpPosition = Engine.QueryInterface(ent, IID_Position);
+			cmpPosition.MoveOutOfWorld();
+			this.disappearOrderQueue[index] = undefined;
+		}
+	}
+
+//TODO make triggers reregisterable?	
+//	if (this.disappearOrderQueue.length < 1)
+//		cmpTrigger.DisableTrigger("OnRange", "DisappearOnArrival");
+	return true;
+}
+
+// Use this trading function instead of the one that cmpTrader provides:
+Trigger.prototype.PerformTrade = function(currentHarbour) // <-- every gaul can trade (UNUSED)
+{
+	var goods = {};
+	// get player good preference:
+	var nextGoods; 
+	var cmpPlayer = QueryOwnerInterface(currentHarbour, IID_Player);
+	if (cmpPlayer)
+		nextGoods = cmpPlayer.GetNextTradingGoods();
+
+	if (!nextGoods)
+		nextGoods = "metal";
+
+	goods.type = nextGoods;
+	var TRADER_GOOD_AMOUNT_MAX = 10000;
+	goods.amount = {"traderGain": Math.round(Math.random() * TRADER_GOOD_AMOUNT_MAX, 0), "is_willing_to_trade": (Math.random() * 10 > 8)};
+	goods.origin = currentHarbour;
+	if (goods.amount && goods.amount.traderGain)
+	{
+		if (!goods.amount.is_willing_to_trade)
+		{
+			// a hero or champion or building can still trade.
+			var cmpBuildingAI = Engine.QueryInterface(currentHarbour, IID_BuildingAI); 
+			var cmpIdentity = Engine.QueryInterface(currentHarbour, IID_Identity);
+			var succeedingEntityClass;
+			var classes_able_to_persuade_the_trader = ["Champion", "Hero", "Dock"];
+			for each (var persuading_class in classes_able_to_persuade_the_trader)
+				if (cmpIdentity.GetClassesList().indexOf(persuading_class) !== -1)
+				{
+					succeedingEntityClass = persuading_class;
+					PushGUINotification("Trader: 'I did not want to trade with folks like you as the Roman power reaches far, but as you sent a "+ succeedingEntityClass +" as envy I'll make an exception.'");
+					break;
+				}
+			if (!succeedingEntityClass)
+				return false;
+		}
+		
+		if (cmpPlayer)
+			cmpPlayer.AddResource(goods.type, goods.amount.traderGain);
+
+		var cmpStatisticsTracker = QueryOwnerInterface(currentHarbour, IID_StatisticsTracker);
+		if (cmpStatisticsTracker)
+			cmpStatisticsTracker.IncreaseTradeIncomeCounter(goods.amount.traderGain);
+
+		return true;
+	}
+
+	return false;
+};
+
 
 function grant_one_time_druid_reinforcements()
 {
@@ -1131,7 +1425,7 @@ function random_launch_major_enemy_assault()
 		warn("No trigger points (I) that define each road that can be taken towards the Gallic village.");
 		return ;
 	}
-	var road_trigger_points_chosen_index = Math.round(Math.random() * road_trigger_points.length - 1, 0);
+	var road_trigger_points_chosen_index = Math.round(Math.random() * (road_trigger_points.length - 1), 0);
 	
 	for each (var ent in entities)
 	{
@@ -1161,7 +1455,7 @@ function random_launch_major_enemy_assault()
 Trigger.prototype.if_attacking_entities_arrived_at_road_waypoint_then_give_further_orders = function(data)
 {
 	var siege_trigger_points = cmpTrigger.GetTriggerPoints("J");
-	var siege_trigger_point_chosen_index = Math.round(Math.random() * siege_trigger_points.length - 1, 0);
+	var siege_trigger_point_chosen_index = Math.round(Math.random() * (siege_trigger_points.length - 1), 0);
 	
 	for each (var ent in this.major_enemy_attack_entities_on_the_way)
 	{
@@ -1177,11 +1471,11 @@ Trigger.prototype.if_attacking_entities_arrived_at_road_waypoint_then_give_furth
 		cmpUnitAI.PushOrderFront(
 			"WalkToTargetRange", { "target": siege_trigger_points[siege_trigger_point_chosen_index], "min": 0, "max": 20 }
 		);
-		if (cmpTrigger.major_enemy_attack_attacking_entities.indexOf(ent) === -1)
-		{
-			cmpTrigger.major_enemy_attack_attacking_entities.push(ent); 
-			cmpTrigger.major_enemy_attack_entities_on_the_way[ent] = undefined;
-		}
+		var ent_key = this.major_enemy_attack_entities_on_the_way.indexOf(ent);
+		if (this.major_enemy_attack_attacking_entities.indexOf(ent) === -1)
+			this.major_enemy_attack_attacking_entities.push(ent);
+		if (ent_key !== -1)
+			this.major_enemy_attack_entities_on_the_way[ent] = undefined;
 
 	}
 
@@ -1213,7 +1507,7 @@ Trigger.prototype.if_attacking_entities_arrived_at_siege_point_then_give_further
 		{
 	        var cmpIdentity = Engine.QueryInterface(ent, IID_Identity);
 			// Don't attack possibly captured Romans: (as you might want to re-convert or free them)
-			if (cmpIdentity.GetCiv() == "roman")
+			if (cmpIdentity.GetCiv().indexOf("rom") !== -1)
 				continue;
 			target = ent;
 			target_cmpIdentity = cmpIdentity;
@@ -1242,7 +1536,7 @@ function spawn_new_enemy_centurio()
 		return ;
 	}
 	
-	var western_most_road_trigger_point = cmpTrigger.GetTriggerPoints("C");
+	var western_most_road_trigger_point = cmpTrigger.GetTriggerPoints("G");
 	var entities = [];
 	entities =
 	TriggerHelper.SpawnUnits(western_most_road_trigger_point, "units/rome_centurio_imperial", 1, INTRUDER_PLAYER); 
