@@ -289,6 +289,9 @@ Trigger.prototype.enterConditions["druid_is_rescued"] = function(cmpTrigger)
 
 Trigger.prototype.enterConditions["turn_the_tide"] = function(cmpTrigger)
 {
+	if (cmpTrigger.playerData[INTRUDER_PLAYER] && cmpTrigger.playerData[INTRUDER_PLAYER].leader && Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader))
+		return false;
+
 	var cmpRangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
 	
 	// Count own units. If there aren't enough units, then abort.
@@ -1091,9 +1094,9 @@ Trigger.prototype.spawn_new_enemy_centurio = function()
 	for each (var ent in entities)
 	{
 		var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
-		cmpUnitAI.PushOrderFront(
-			"WalkToTargetRange", { "target": fortress_trigger_point, "min": 0, "max": 20 }
-		);
+		//cmpUnitAI.PushOrderFront(
+		//	"WalkToTargetRange", { "target": fortress_trigger_point, "min": 0, "max": 20 }
+		//);
 		var cmpUnitMotion = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitMotion);
 		cmpUnitMotion.MoveToTargetRange(fortress_trigger_point, 0, 20);
 	}
@@ -1107,7 +1110,7 @@ Trigger.prototype.SpawnEnemyAndAttack = function(data)
 	// spawn armies.
 	var spawned_units_count = -1; 
 	var spawned_units = [];
-	var spawn_points = [this.GetTriggerPoints("F"), this.GetTriggerPoints("G"), this.GetTriggerPoints("D"), this.GetTriggerPoints("I")];
+	var spawn_points = [this.GetTriggerPoints("F"), this.GetTriggerPoints("G"), this.GetTriggerPoints("D"), this.GetTriggerPoints("I"), this.GetTriggerPoints("J")];
 	while (++spawned_units_count < this.enemy_attack_unit_count)
 	{
 		var where = pickRandomly(spawn_points);
@@ -1152,13 +1155,19 @@ Trigger.prototype.SpawnEnemyAndAttack = function(data)
 		if (enemy_entities.length && enemy_entities.length > 0)
 		{
 			var target = pickRandomly(enemy_entities);
+			for each (var enemy in enemy_entities)
+				if (cmpUnitAi.CanAttack(target))
+				{
+					target = enemy;
+					break;
+				}
+			
 			//cmpUnitAi.PushOrderFront("Attack", {"target": target, "force": false});
 			cmpUnitMotion.MoveToTargetRange(target, 0, 20);
 			continue;
 		}
 		var trigger_points_in_gallic_village = this.GetTriggerPoints("K");
 		var chosen_target = pickRandomly(trigger_points_in_gallic_village);
-		var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
 		cmpUnitMotion.MoveToTargetRange(chosen_target, 0, 20);
 	}
 }
@@ -1171,7 +1180,7 @@ Trigger.prototype.enable_interval_trigger_that_launches_enemy_attacks = function
 	data.enabled = false;
 	data.delay = 1000; // launch first wave in one second from now.
 	data.interval = cmpTrigger.enemy_attack_interval;
-	data.overwrite_existing = true;
+	//TODO data.overwrite_existing = true;
 	this.RegisterTrigger("OnInterval", "SpawnEnemyAndAttack", data);
 	
 	this.EnableTrigger("OnInterval", "SpawnEnemyAndAttack");
@@ -1255,7 +1264,7 @@ Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy = function
 		return ;
 	
 	// The centurio entered the range of the trigger point?
-	if (data.entities.indexOf(this.playerData[INTRUDER_PLAYER].leader) === -1)
+	if (data.added.indexOf(this.playerData[INTRUDER_PLAYER].leader) === -1)
 		return ;
 
 	var range = 128; // TODO: what's a sensible number?
@@ -1333,7 +1342,7 @@ function counter_strike_recommendation()
 Trigger.prototype.random_phoenician_trader_visit = function()
 {
 	// A trader passes by seldomly:
-	var probability_of_trader_passing_by_closely = .01;
+	var probability_of_trader_passing_by_closely = .0001;
 	if (random_abort(1 - probability_of_trader_passing_by_closely))
 		return false;
 	
@@ -1404,11 +1413,12 @@ Trigger.prototype.random_phoenician_trader_visit = function()
 	if (this.traders_on_their_way.indexOf(trader) == -1)
 		this.traders_on_their_way.push(trader);
 	
+	
 	var d = {};
 	d = {
 		"entities": [harbour], //<-- this is suboptimal and not general enough! TODO use one trigger point type of owner gaia as fixed disappear point, where units disappear if they enter its set range?
 		"players": [TRADER_PLAYER],
-		"maxRange": 20,
+		"maxRange": 50,
 		"requiredComponent": IID_UnitAI,
 		"enabled": true
 	}
@@ -1463,7 +1473,7 @@ Trigger.prototype.HarbourArrival = function(data)
 	d = {
 		"entities": ship_spawn_entities, //<-- this is still suboptimal if the DisappearOnArrival is registered with the same event again but with different entities (overwriting the ones we registered/set here). TODO Maybe use one trigger point type of owner gaia as fixed disappear point, where units disappear if they enter its set range?
 		"players": [TRADER_PLAYER],
-		"maxRange": 20,
+		"maxRange": 50,
 		"requiredComponent": IID_UnitAI,
 		"enabled": true
 	}
