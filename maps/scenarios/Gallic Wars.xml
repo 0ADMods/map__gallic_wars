@@ -33,7 +33,7 @@
 		</Postproc>
 	</Environment>
 	<Camera>
-		<Position x="350.292" y="92.7795" z="388.033"/>
+		<Position x="423.372" y="111.093" z="361.878"/>
 		<Rotation angle="0"/>
 		<Declination angle="0.610865"/>
 	</Camera>
@@ -7511,7 +7511,7 @@
 		</Entity>
 		<Entity uid="1611">
 			<Template>other/palisades_rocks_tower</Template>
-			<Player>2</Player>
+			<Player>1</Player>
 			<Position x="447.58051" z="447.40262"/>
 			<Orientation y="2.35621"/>
 			<Actor seed="38528"/>
