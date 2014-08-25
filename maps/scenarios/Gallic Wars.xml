@@ -41,7 +41,7 @@
 {
   "CircularMap": true,
   "Description": "Give an interesting description of your map.",
-  "Name": "Unnamed map",
+  "Name": "Gallic Wars",
   "PlayerData": [
     {
       "Civ": "gaul",
@@ -88,7 +88,9 @@
   "TriggerScripts": [
     "scripts/TriggerHelper.js",
     "scenarios/Gallic_Wars.js"
-  ]
+  ],
+  "Preview": "gallic_wars_sunset.jpg",
+  "RevealMap": false
 }
 ]]></ScriptSettings>
 	<Entities>
