@@ -43,10 +43,10 @@ Trigger.prototype.storyline[DEFENDER_PLAYER] = {
 	"construction_phase": ["set_construction_phase_timeout_starttime_if_undefined", "random_amass_enemy", "defend_village_selector"],
 	"defend_village_selector": ["defend_village_against_increasing_force", "defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties", "defend_village_against_decreasing_force", "defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties", "village_is_fallen"],// TODO move enable interval_trigger_ ... to the common defend_village_selector and add function call that increases enemy strength.
 	"village_is_fallen": ["terminate_doom_of_gaul"],
-	"defend_village_against_increasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "druid_is_rescued", "druid_is_dead", "random_enemy_centurio_excursion", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_more_frequent", "defend_village_selector"],
-	"druid_is_rescued": ["grant_one_time_druid_reinforcements", "lessen_major_enemy_attack_probability", "defend_village_selector"],
-	"druid_is_dead": ["grant_one_time_druid_reinforcements", "increase_major_enemy_attack_probability", "defend_village_selector"],
-	"defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties": ["enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "random_enemy_centurio_excursion", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_more_frequent", "druid_is_dead", "defend_village_selector"/*must be the last item to avoid the danger of an endless loop if no state can be reached before we over and over reenter defend_village_xy!*/],
+	"defend_village_against_increasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "druid_is_rescued", "druid_is_dead", "random_enemy_centurio_excursion", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_more_frequent", "make_enemy_attacks_stronger", "defend_village_selector"],
+	"druid_is_rescued": ["grant_one_time_druid_reinforcements", "lessen_major_enemy_attack_probability", "make_enemy_attacks_weaker", "defend_village_selector"],
+	"druid_is_dead": ["grant_one_time_druid_reinforcements", "increase_major_enemy_attack_probability", "make_enemy_attacks_stronger", "defend_village_selector"],
+	"defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties": ["enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "random_enemy_centurio_excursion", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_more_frequent", "make_enemy_attacks_stronger", "druid_is_dead", "defend_village_selector"/*must be the last item to avoid the danger of an endless loop if no state can be reached before we over and over reenter defend_village_xy!*/],
 	
 	"turn_the_tide": ["disable_interval_trigger_that_launches_enemy_attacks", "destroy_enemy_encampment_within_time"],
 	"destroy_enemy_encampment_within_time": ["turning_the_tide_failed", "tide_is_turned"],
@@ -54,8 +54,8 @@ Trigger.prototype.storyline[DEFENDER_PLAYER] = {
 	"turning_the_tide_failed": ["defend_village_selector"], // <-- extra state to easily allow to print a message once and switch back to the correct defend village state (depending on if the enemy centurio is still alive/ a new one already arrived and if the druid has already been rescued and is still alive)
 	
  	// once the enemy centurio was killed or captured, we enter:
-	"defend_village_against_decreasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "random_launch_major_enemy_assault", "enemy_centurio_excursion", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_less_frequent", "defend_village_selector"],
-	"defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties": [ "enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "random_launch_major_enemy_assault", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "lessen_major_enemy_attack_probability", "make_enemy_attacks_less_frequent", "turn_the_tide", "defend_village_selector"],
+	"defend_village_against_decreasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "random_launch_major_enemy_assault", "enemy_centurio_excursion", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "defend_village_selector"],
+	"defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties": [ "enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "random_launch_major_enemy_assault", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "lessen_major_enemy_attack_probability", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker" "turn_the_tide", "defend_village_selector"],
 
 	"hurry_back_to_defend_village": ["defend_village_against_increasing", "defend_village"],
 	"wipe_out_enemy": ["less_than_x_population_count", "victory"],
@@ -365,7 +365,9 @@ Trigger.prototype.enterConditions["turn_the_tide"] = function(cmpTrigger)
 	// Count active enemy attacks. If there are any active attacks, then no counter attack can be ordered.
 	//if (cmpTrigger.activeEnemyAttacks > 0)
 	//	return false;
-    
+		
+		
+    cmpTrigger.setup_fortress_countdown(cmpTrigger);
 
 	// 
 	return true;
@@ -396,6 +398,10 @@ Trigger.prototype.countdown = function(data)
 		--this.turning_the_tide_timeout_timeleft;
 		// TODO update countdown GUI top right corner?
 		 
+	}
+	else 
+	{
+		this.DisableTrigger("OnInterval", "countdown");
 	}
 
 }
@@ -726,9 +732,13 @@ cmpTrigger.RegisterTrigger("OnTreasureCollected", "TreasureCollected", data);
 
 // SpawnEnemyAndAttack steering data: (maybe changed during/by the storyline)
 cmpTrigger.enemy_attack_interval = 3 * 60 * SECOND; // every 3 minute
+cmpTrigger.ENEMY_ATTACK_INTERVAL_MIN = 2 * SECOND; // every 10 minutes
 cmpTrigger.ENEMY_ATTACK_INTERVAL_MAX = 10 * 60 * SECOND; // every 10 minutes
+cmpTrigger.ENEMY_ATTACK_INTERVAL_STEP = 10 * SECOND; // increase or decrease by 10 seconds
 cmpTrigger.enemy_attack_unit_count = 10; 
 cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MAX = 1000; 
+cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_STEP = 1;
+   
 
 var composition_very_weak = {"Classes": ["Infantry+Melee+Basic"], "frequency_or_weight": 10};
 var composition_weak = {"Classes": ["Melee Ranged"], "frequency_or_weight": 15};
@@ -832,7 +842,7 @@ Trigger.prototype.SKIP_STATE_CYCLING_NOTIFICATION_AMOUNT = 10;
 cmpTrigger.skipped_state_cycling_notification_count = 0;
 Trigger.prototype.CONSTRUCTION_PHASE_BUILDING_COUNT_TO_CONSTRUCT = 10;
 Trigger.prototype.CONSTRUCTION_PHASE_TRESHOLD_ENEMY_NUMEROUS = 50;
-Trigger.prototype.CONSTRUCTION_PHASE_TIMEOUT = 120 * SECOND; // 2min
+Trigger.prototype.CONSTRUCTION_PHASE_TIMEOUT = 2 * 60 * SECOND; // 2min
 
 
 
@@ -1377,22 +1387,40 @@ Trigger.prototype.disable_interval_trigger_that_launches_enemy_attacks = functio
 Trigger.prototype.make_enemy_attacks_more_frequent = function()
 {
 	var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger);
-	if (cmpTrigger.enemy_attack_interval > 1999)
-		cmpTrigger.enemy_attack_interval -= 1000; // 1 second less waiting time
-	
+	if (cmpTrigger.enemy_attack_interval > cmpTrigger.ENEMY_ATTACK_INTERVAL_MIN + cmpTrigger.ENEMY_ATTACK_INTERVAL_STEP) // > 2 min ?
+		cmpTrigger.enemy_attack_interval -= cmpTrigger.ENEMY_ATTACK_INTERVAL_STEP; // x second less waiting time
+
 }
 
 Trigger.prototype.make_enemy_attacks_less_frequent = function()
 {
 	var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger);
-	if (cmpTrigger.enemy_attack_interval < cmpTrigger.ENEMY_ATTACK_INTERVAL_MAX - 1)
-		cmpTrigger.enemy_attack_interval += 1000; // 1 second more waiting time => less frequent
+	if (cmpTrigger.enemy_attack_interval < cmpTrigger.ENEMY_ATTACK_INTERVAL_MAX - cmpTrigger.ENEMY_ATTACK_INTERVAL_STEP) // > 2 min ?
+		cmpTrigger.enemy_attack_interval += cmpTrigger.ENEMY_ATTACK_INTERVAL_STEP; // x second more waiting time
+}
+
+
+Trigger.prototype.make_enemy_attacks_stronger = function()
+{
+	var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger);
+	if (cmpTrigger.enemy_attack_unit_count < cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MAX - cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_STEP)
+		cmpTrigger.enemy_attack_unit_count += cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_STEP;
 	
 }
 
+Trigger.prototype.make_enemy_attacks_weaker = function()
+{
+	var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger);
+	if (cmpTrigger.enemy_attack_unit_count > 0 + cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_STEP)
+		cmpTrigger.enemy_attack_unit_count -= cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_STEP;
+
+}
+
+
+
 Trigger.prototype.random_make_call_to_rescue_the_druid = function()
 {
-	// abort chance 10 %
+	// abort chance 5 %
 	if (random_abort(.05))
 		return ;
 	
@@ -1521,7 +1549,7 @@ function give_counter_strike_recommendation()
 	var gauls_nearby_village_count = 0;
 	
 	var range_min = 0; 
-	var range_max = 300; // keep  300m around the harbour free from fighting.
+	var range_max = 1000;
 	var entities_nearby = getNearbyEnemies(this.GetTriggerPoints("K")[0], range_min, range_max, IID_UnitAI);
 	
 	var enemy_entities = [];
