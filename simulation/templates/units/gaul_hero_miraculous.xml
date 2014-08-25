@@ -9,7 +9,7 @@
     <Range>200</Range>
     <HP>30</HP>
     <Rate>100</Rate>
-    <UnhealableClasses datatype="tokens"/>
+    <UnhealableClasses datatype="tokens">Structure</UnhealableClasses>
     <HealableClasses datatype="tokens">Organic</HealableClasses>
   </Heal>
   <Cost>
