@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Entity parent="template_unit_dog">
+  <Armour>
+    <Hack>100</Hack>
+    <Pierce>100</Pierce>
+    <Crush>100</Crush>
+  </Armour>
+  <Attack>
+    <Slaughter>
+      <Hack>100.0</Hack>
+      <Pierce>50.0</Pierce>
+      <Crush>20.0</Crush>
+      <MaxRange>4.0</MaxRange>
+    </Slaughter>
+    <Melee>
+      <Hack>100.0</Hack>
+      <Pierce>50.0</Pierce>
+      <Crush>20.0</Crush>
+      <MaxRange>3.0</MaxRange>
+      <RepeatTime>200</RepeatTime>
+	  <Bonuses>
+		<BonusSupport>
+		  <Classes>Support</Classes>
+		  <Multiplier>2.0</Multiplier>
+		</BonusSupport>
+		<BonusCav>
+		  <Classes>Cavalry</Classes>
+		  <Multiplier>1.5</Multiplier>
+		</BonusCav>
+		<BonusHunt>
+		  <Classes>Animal</Classes>
+		  <Multiplier>1.5</Multiplier>
+		</BonusHunt>
+	  </Bonuses>
+      <RestrictedClasses datatype="tokens">Structure</RestrictedClasses>
+    </Melee>
+  </Attack>
+  <Health>
+    <Max>800</Max>
+  </Health>
+  <Identity>
+    <Civ>gaul</Civ>
+	<SelectionGroupName>units/gaul_idefisk</SelectionGroupName>
+    <SpecificName>Coun</SpecificName>
+    <History>The Celts used large dogs such as mastiffs or wolfhounds in combat, especially against enemy cavalry. The Romans were very impressed with the strength and ferocity of these dogs. Many were brought back to Rome for the gladiator arena or to serve as guard dogs.</History>
+    <Icon>units/celt_war_dog.png</Icon>
+  </Identity>
+  <Promotion disable="">
+  </Promotion>
+  <VisualActor>
+    <Actor>units/celts/cavalry_spearman_b.xml</Actor>
+  </VisualActor>
+</Entity>

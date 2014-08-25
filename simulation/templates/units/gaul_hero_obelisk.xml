@@ -18,10 +18,10 @@
   </Armour>
   <Attack>
     <Melee>
-      <Hack>99.0</Hack>
+      <Hack>999.0</Hack>
       <Pierce>0.0</Pierce>
-      <Crush>0.0</Crush>
-      <MaxRange>7.0</MaxRange>
+      <Crush>100.0</Crush>
+      <MaxRange>10.0</MaxRange>
       <RepeatTime>700</RepeatTime>
 	  <Bonuses>
 		<BonusPrimary>
@@ -46,14 +46,14 @@
     <Civ>gaul</Civ>
     <GenericName>Gaul</GenericName>
     <SpecificName>Obelisk</SpecificName>
-    <History>?</History>
+    <History>Boar bearer</History>
     <Icon>units/celt_hero_britomartus.png</Icon>
   </Identity>
   <ResourceGatherer>
     <BaseSpeed>1.75</BaseSpeed>
   </ResourceGatherer>
   <UnitMotion>
-    <WalkSpeed>10</WalkSpeed>
+    <WalkSpeed>11</WalkSpeed>
     <Run>
       <Speed>37.0</Speed>
     </Run>

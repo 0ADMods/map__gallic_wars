@@ -6,9 +6,9 @@
     <Crush>0.0</Crush>
   </Armour>
   <Heal>
-    <Range>100</Range>
+    <Range>200</Range>
     <HP>30</HP>
-    <Rate>2000</Rate>
+    <Rate>100</Rate>
     <UnhealableClasses datatype="tokens"/>
     <HealableClasses datatype="tokens">Organic</HealableClasses>
   </Heal>
@@ -22,7 +22,7 @@
     </Resources>
   </Cost>
   <Health>
-    <Max>600</Max>
+    <Max>30000</Max>
   </Health>
   <Identity>
     <Civ>gaul</Civ>

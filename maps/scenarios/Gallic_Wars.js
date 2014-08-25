@@ -609,7 +609,7 @@ cmpTrigger.RegisterTrigger("OnTreasureCollected", "TreasureCollected", data);
 
 
 // SpawnEnemyAndAttack steering data: (maybe changed during/by the storyline)
-cmpTrigger.enemy_attack_interval = 60 * SECOND; // every 3 minute
+cmpTrigger.enemy_attack_interval = 3 * 60 * SECOND; // every 3 minute
 cmpTrigger.ENEMY_ATTACK_INTERVAL_MAX = 10 * 60 * SECOND; // every 10 minutes
 cmpTrigger.enemy_attack_unit_count = 10; 
 cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MAX = 1000; 
@@ -668,9 +668,9 @@ cmpTrigger.compositions = [
 		{"template": "units/{Civ}_support_healer_e", "count": cmpTrigger.getRandomUnitCount()}, 
 	],
 	[
-		{"template": "units/{Civ}_mechanical_siege_ram", "count": cmpTrigger.getRandomUnitCount()}, 
-		{"template": "units/{Civ}_mechanical_siege_ballista_packed", "count": cmpTrigger.getRandomUnitCount()}, 
-		{"template": "units/{Civ}_mechanical_siege_scorpio_packed", "count": cmpTrigger.getRandomUnitCount()}, 
+		{"template": "units/{Civ}_mechanical_siege_ram", "count": Math.round(cmpTrigger.getRandomUnitCount() / 3, 0)}, 
+		{"template": "units/{Civ}_mechanical_siege_ballista_unpacked", "count": Math.round(cmpTrigger.getRandomUnitCount() / 3, 0)}, 
+		{"template": "units/{Civ}_mechanical_siege_scorpio_unpacked", "count": Math.round(cmpTrigger.getRandomUnitCount() / 3, 0)}, 
 		{"template": "units/rome_legionnaire_imperial", "count": cmpTrigger.getRandomUnitCount()}, 
 		{"template": "units/{Civ}_champion_infantry", "count": cmpTrigger.getRandomUnitCount()}, 
 		{"template": "units/{Civ}_champion_cavalry", "count": cmpTrigger.getRandomUnitCount()}, 
@@ -685,7 +685,7 @@ var entities = cmpTrigger.GetTriggerPoints("A");
 data = {
 	"entities": entities, // central points to calculate the range circles
 	"players": [INTRUDER_PLAYER, DEFENDER_PLAYER], // only count entities of player 1
-	"maxRange": 300,
+	"maxRange": 200,
 	"requiredComponent": IID_UnitAI, // only count units in range
 	"enabled": true
 };
@@ -695,7 +695,7 @@ var druid_trigger_point = cmpTrigger.GetTriggerPoints("D")[0];
 data = {
 	"entities": [druid_trigger_point],
 	"players": [DEFENDER_PLAYER],
-	"maxRange": 10,
+	"maxRange": 30,
 	"requiredComponent": IID_UnitAI,
 	"enabled": true
 }
@@ -720,7 +720,8 @@ Trigger.prototype.CONSTRUCTION_PHASE_TIMEOUT = 120 * SECOND; // 2min
 
 
 
-cmpTrigger.is_debug = false;//true;
+cmpTrigger.is_debug = false;
+//cmpTrigger.is_debug = true;
 
 // STORY START
 cmpTrigger.state = "init";
@@ -915,8 +916,8 @@ function challengeDeclined()
 Trigger.prototype.spawnDruid = function(data)
 {
 	var have_allied_ents_come_to_rescue = false;
-	if (data.added)
-		for each (var ent in data.added)
+	if (data.currentCollection)
+		for each (var ent in data.currentCollection)
 		{
 			var cmpOwnership = Engine.QueryInterface(ent, IID_Ownership);
 			if (cmpOwnership.GetOwner() == DEFENDER_PLAYER)
@@ -952,9 +953,10 @@ Trigger.prototype.spawn_initial_gauls = function(data)
 			, {"template": "units/gaul_champion_infantry", "count": 10}
 			, {"template": "units/gaul_champion_cavalry", "count": 10}
 
-			// heroes
-			, {"template": "units/gaul_hero_asterisk", "count": 2}
+
+			, {"template": "units/gaul_idefisk", "count": 1}
 			, {"template": "units/gaul_hero_obelisk", "count": 2}
+
 	];
 	var trigger_points_in_gallic_village = this.GetTriggerPoints("A");
 	
@@ -968,6 +970,13 @@ Trigger.prototype.spawn_initial_gauls = function(data)
 
 	// asterisk
 	// both common units for now.
+	units_to_spawn = [
+			// heroes
+			{"template": "units/gaul_hero_asterisk", "count": 2}
+	];
+	var trigger_points_outside_gallic_village = this.GetTriggerPoints("B");
+	
+	this.spawn_initial(units_to_spawn, DEFENDER_PLAYER, trigger_points_outside_gallic_village);
 	 
 	// obelisk
 	 
@@ -991,7 +1000,7 @@ Trigger.prototype.spawn_initial_gauls = function(data)
 	
 }
 
-Trigger.prototype.spawn_initial = function(entities_to_spawn, playerId, spawn_location_entities)
+Trigger.prototype.spawn_initial = function(entities_to_spawn, playerId, spawn_location_entities, chooseSpawnPointFromBuildings = true)
 {
 	this.playerData[playerId].initial_buildings = [];
 	this.playerData[playerId].initial_units = [];
@@ -1011,7 +1020,6 @@ Trigger.prototype.spawn_initial = function(entities_to_spawn, playerId, spawn_lo
 
 
 	var chosen_spawn_entity;
-	var chooseSpawnPointFromBuildings = true;
 	for each (var unit_to_spawn in entities_to_spawn)
 	{
 		// choose random spawn point within village or any gallic building:
@@ -1181,7 +1189,7 @@ Trigger.prototype.enable_interval_trigger_that_launches_enemy_attacks = function
 	data.enabled = false;
 	data.delay = 1000; // launch first wave in one second from now.
 	data.interval = cmpTrigger.enemy_attack_interval;
-	//TODO data.overwrite_existing = true;
+	data.overwrite_existing = true;
 	this.RegisterTrigger("OnInterval", "SpawnEnemyAndAttack", data);
 	
 	this.EnableTrigger("OnInterval", "SpawnEnemyAndAttack");
@@ -1211,7 +1219,7 @@ Trigger.prototype.make_enemy_attacks_less_frequent = function()
 Trigger.prototype.random_make_call_to_rescue_the_druid = function()
 {
 	// abort chance 10 %
-	if (random_abort(.1))
+	if (random_abort(.05))
 		return ;
 	
 	PushGUINotification([DEFENDER_PLAYER], "We have received a message from our druid: 'My Gallic friends, please increase your efforts to rescue me! I don't know where they brought me, but I can sense it must be in the forrest ... and it smells like if they made a fire.'");
@@ -1355,7 +1363,7 @@ Trigger.prototype.random_phoenician_trader_visit = function()
 	
 	// The trader doesn't want to enter the harbour if fighting is close. (give the player a motivation to keep the harbour area clear of fighting to increase the probability that the trader will come by.)
 	var range_min = 0; 
-	var range_max = 400; // keep  400m around the harbour free from fighting.
+	var range_max = 300; // keep  300m around the harbour free from fighting.
 	var entities_nearby = getNearbyEnemies(this.GetTriggerPoints("B")[0], range_min, range_max);
 	
 	var enemy_entities = [];
@@ -1781,7 +1789,7 @@ function random_abort(abort_chance_percent_float_or_int, abort_when_greater_than
 
 function pickRandomly(list)
 {
-	if (!list)
+	if (!list || !list.length || list.length < 0)
 		return undefined;
 
 	return list[Math.round(Math.random() * (list.length - 1), 0)];
