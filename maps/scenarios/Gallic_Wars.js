@@ -99,6 +99,14 @@ Trigger.prototype.messages["construction_phase"] = function()
 	
 }
 
+Trigger.prototype.messages["druid_is_rescued"] = function() 
+{
+	PushGUINotification(
+		[DEFENDER_PLAYER], 
+		"Our troops could rescue our druid. Hope is back! Our Gallic friends sent reinforcements as they heard of this brave action."
+	);
+}
+
 Trigger.prototype.messages["defend_village_selector"] = function() 
 {
 	PushGUINotification(
@@ -124,6 +132,33 @@ Trigger.prototype.messages["turning_the_tide"] = function()
 	);
 	
 }
+Trigger.prototype.messages["turning_the_tide_failed"] = function()
+{
+	PushGUINotification(
+		[DEFENDER_PLAYER], 
+		"Our effort to turn the tide seems hopeless. We failed to take advantage of the weak enemy positions!"
+	);
+	
+}
+Trigger.prototype.messages["tide_is_turned"] = function()
+{
+	PushGUINotification(
+		[DEFENDER_PLAYER], 
+		"Teutates! We turned the tide! Let's finish it."
+	);
+	
+}
+Trigger.prototype.messages["wipe_out_enemy"] = function()
+{
+	PushGUINotification(
+		[DEFENDER_PLAYER], 
+		"We have to deal with all nearby enemy fortifications and to start throwing the Romans out of Gaul."
+	);
+	
+}
+
+
+
 
 
 function PushGUINotification(players, message)
@@ -215,8 +250,10 @@ Trigger.prototype.enterConditions["village_is_fallen"] = function(cmpTrigger)
 // DEFEND VILLAGE SELECTOR CONDITIONS (interacting and dependent on each other. Note: only one at a time must be reachable!)
 Trigger.prototype.enterConditions["defend_village_against_increasing_force"] = function(cmpTrigger)
 {
-	return !cmpTrigger.isAlreadyAchieved["defend_village_against_increasing_force"] // <-- can theoretically be spared as already called in the storylineMachine.
-			&& are_criteria_for_increasing_force_met(cmpTrigger) && !are_criteria_for_reinforcements_met(cmpTrigger);
+	return 
+//		!cmpTrigger.isAlreadyAchieved["defend_village_against_increasing_force"] // <-- can theoretically be spared as already called in the storylineMachine.
+//			&&
+			 are_criteria_for_increasing_force_met(cmpTrigger) && !are_criteria_for_reinforcements_met(cmpTrigger);
 }
 
 function are_criteria_for_reinforcements_met(cmpTrigger)
@@ -237,8 +274,10 @@ function are_criteria_for_reinforcements_met(cmpTrigger)
 Trigger.prototype.enterConditions["defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties"] = function(cmpTrigger)
 {
 	// inherit from the roman centurio existence/alive condition:
-	return !cmpTrigger.isAlreadyAchieved["defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties"]
-			&& are_criteria_for_increasing_force_met(cmpTrigger) && are_criteria_for_reinforcements_met(cmpTrigger);
+	return
+//		!cmpTrigger.isAlreadyAchieved["defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties"]
+//			&&
+			 are_criteria_for_increasing_force_met(cmpTrigger) && are_criteria_for_reinforcements_met(cmpTrigger);
 }
 
 function are_criteria_for_increasing_force_met(cmpTrigger)
@@ -261,8 +300,10 @@ Trigger.prototype.enterConditions["defend_village_against_decreasing_force"] = f
 
 Trigger.prototype.enterConditions["defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties"] = function(cmpTrigger)
 {
-	return !cmpTrigger.isAlreadyAchieved["defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties"]
-			&& !are_criteria_for_increasing_force_met(cmpTrigger) && are_criteria_for_reinforcements_met(cmpTrigger); 
+	return 
+//		!cmpTrigger.isAlreadyAchieved["defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties"]
+//			&&
+			 !are_criteria_for_increasing_force_met(cmpTrigger) && are_criteria_for_reinforcements_met(cmpTrigger); 
 	 
 }
 
@@ -290,8 +331,8 @@ Trigger.prototype.enterConditions["druid_is_rescued"] = function(cmpTrigger)
 Trigger.prototype.enterConditions["turn_the_tide"] = function(cmpTrigger)
 {
 	warn('leader: ' + cmpTrigger.playerData[INTRUDER_PLAYER].leader + ' isAlive: ' + Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader));
-	if (cmpTrigger.playerData[INTRUDER_PLAYER] && cmpTrigger.playerData[INTRUDER_PLAYER].leader && Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader))
-		return false;
+	//if (cmpTrigger.playerData[INTRUDER_PLAYER] && cmpTrigger.playerData[INTRUDER_PLAYER].leader && Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader))
+	//	return false;
 
 	var cmpRangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
 	
@@ -316,11 +357,69 @@ Trigger.prototype.enterConditions["turn_the_tide"] = function(cmpTrigger)
 }
 
 
+Trigger.prototype.setup_fortress_countdown = function(cmpTrigger)
+{
+	var min = Math.round(this.turning_the_tide_timeout_timeleft / 60 / SECOND, 0);
+	var sec = this.turning_the_tide_timeout_timeleft - min * 60 * SECOND; 
+	PushGUINotification([DEFENDER_PLAYER], "You have " + min + "min " + sec + " sec to take the enemy fortress.");
+	
+	var data = {};
+	data.enabled = true;
+	data.delay = 1 * SECOND; // launch cycle immediately.
+	data.interval = 1 * SECOND;
+	
+	this.RegisterTrigger("OnInterval", "countdown", data);
+
+}
 
 
+Trigger.prototype.countdown = function(data)
+{
+	if (this.turning_the_tide_timeout_timeleft > 0)
+	{
+		--this.turning_the_tide_timeout_timeleft;
+		// TODO update countdown GUI top right corner?
+		 
+	}
+
+}
+
+Trigger.prototype.enterConditions["turning_the_tide_failed"] = function(cmpTrigger)
+{
+	if (this.turning_the_tide_timeout_timeleft > 0)
+	{
+		//PushGUINotification([DEFENDER_PLAYER], "You have still time to take down the enemy fortress.");
+		return false;
+	}
+	//else time has run out: we might have failed.
+	// Note: This only works because the Romans never construct buildings. Examine all entities and filter out the buildings instead to get a general solution.
+	if (cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings)
+		for each (var b in cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings)
+			if (b)
+			{
+				var cmpHealth = Engine.QueryInterface(b, IID_Health);
+				if (cmpHealth && cmpHealth.GetHitpoints() > 0)
+					return true; // not yet destroyed all
+			}
+	// okay, we have destroyed all enemy buildings => we have not failed. => don't enter this state
+	return false;
+}
 
 
-
+Trigger.prototype.enterConditions["tide_is_turned"] = function(cmpTrigger)
+{
+	// Note: This only works because the Romans never construct buildings. Examine all entities and filter out the buildings instead to get a general solution.
+	if (cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings)
+		for each (var b in cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings)
+			if (b)
+			{
+				var cmpHealth = Engine.QueryInterface(b, IID_Health);
+				if (cmpHealth && cmpHealth.GetHitpoints() > 0)
+					return false; // not yet destroyed all
+			}
+	// okay, we have destroyed all enemy buildings => we have not failed. => don't enter this state
+	return true;
+}
 
 //======================================================================================
 // STORY FUNCTIONS/ TRIGGER ACTIONS 
@@ -594,6 +693,7 @@ for (var playerNum = 0; playerNum < cmpPlayerMan.GetNumPlayers(); ++playerNum)
 }
 cmpTrigger.isAlreadyAchieved = {};
 cmpTrigger.activeEnemyAttacks = 0;
+cmpTrigger.turning_the_tide_timeout_timeleft = 10 * 60 * SECOND; 
 
 // SET UP STORY EVENTS / TRIGGERS
 var data = {"enabled": true};
@@ -726,7 +826,7 @@ cmpTrigger.is_debug = false;
 // STORY START
 cmpTrigger.state = "init";
 Trigger.prototype.STATE_CYCLE_DELAY = 5 * SECOND;
-cmpTrigger.DoAfterDelay(2000, "startStoryline", {});
+cmpTrigger.DoAfterDelay(1500, "startStoryline", {});
 
 
 
@@ -974,14 +1074,20 @@ Trigger.prototype.spawn_initial_gauls = function(data)
 			// heroes
 			{"template": "units/gaul_idefisk", "count": 1}
 			, {"template": "units/celt_fat_gaul", "count": 10}
-			, {"template": "units/gaul_hero_asterisk", "count": 2}
 	];
 	var trigger_points_outside_gallic_village = this.GetTriggerPoints("B");
 	
 	this.spawn_initial(units_to_spawn, DEFENDER_PLAYER, trigger_points_outside_gallic_village);
 	 
 	// obelisk
-	 
+	units_to_spawn = [
+			// heroes
+			{"template": "units/gaul_hero_asterisk", "count": 2}
+	];
+	
+	this.spawn_initial(units_to_spawn, DEFENDER_PLAYER, [trigger_points_outside_gallic_village[0]], false);
+
+
 	// shieldbearers:
 	var ent =  {"template": "units/gaul_shieldbearers", "count": 1};
 	var chosen_spawn_entity = this.GetTriggerPoints("K")[0];
@@ -1002,7 +1108,7 @@ Trigger.prototype.spawn_initial_gauls = function(data)
 	
 }
 
-Trigger.prototype.spawn_initial = function(entities_to_spawn, playerId, spawn_location_entities, chooseSpawnPointFromBuildings = true)
+Trigger.prototype.spawn_initial = function(entities_to_spawn, playerId, spawn_location_entities, allowSpawningFromBuildings = true, alternateTriggerPointAndBuildingSpawning = true)
 {
 	this.playerData[playerId].initial_buildings = [];
 	this.playerData[playerId].initial_units = [];
@@ -1022,25 +1128,28 @@ Trigger.prototype.spawn_initial = function(entities_to_spawn, playerId, spawn_lo
 
 
 	var chosen_spawn_entity;
+	var chooseSpawnPointFromBuildings = true;  // start with allowing it.
 	for each (var unit_to_spawn in entities_to_spawn)
 	{
 		// choose random spawn point within village or any gallic building:
 		var chosen_spawn_point = pickRandomly(spawn_location_entities);
 		var chosen_spawn_building = pickRandomly(this.playerData[playerId].initial_buildings);
 		
-		if (chooseSpawnPointFromBuildings || !chosen_spawn_point)
-		{
-			chooseSpawnPointFromBuildings = false;
+		if (allowSpawningFromBuildings && chooseSpawnPointFromBuildings || !chosen_spawn_point && chosen_spawn_building)
+		{	
+			if (alternateTriggerPointAndBuildingSpawning)
+				chooseSpawnPointFromBuildings = false;
 			chosen_spawn_entity = chosen_spawn_building;
 		}
 		else if (chosen_spawn_point)
 		{
-			chooseSpawnPointFromBuildings = true;
+			if (allowSpawningFromBuildings && alternateTriggerPointAndBuildingSpawning)
+				chooseSpawnPointFromBuildings = true;
 			chosen_spawn_entity = chosen_spawn_point;
 		}
 		else 
 		{
-			warn("Neither building to be spawned at was defined nor any trigger point A could be found within the Gallic village. => Skipping: " + uneval(unit_to_spawn));
+			warn("Neither building to be spawned at was defined nor any trigger point " + uneval(spawn_location_entities) + " could be found within the Gallic village. => Skipping: " + uneval(unit_to_spawn));
 			continue ;
 		}
 		
@@ -1341,12 +1450,38 @@ function getNearbyEnemiesWithComponent(source, range_min, range_max, component)
 }
 
 
-function counter_strike_recommendation()
+function give_counter_strike_recommendation()
 {
-	// TODO analyze current situation on the battle fields:
+	// analyze current situation on the battle fields:
 	// count enemies nearby village:
 	var enemies_nearby_village_count = 0;
-	var gauls_nearby_village_count = 100;
+	var gauls_nearby_village_count = 0;
+	
+	var range_min = 0; 
+	var range_max = 300; // keep  300m around the harbour free from fighting.
+	var entities_nearby = getNearbyEnemies(this.GetTriggerPoints("K")[0], range_min, range_max, IID_UnitAI);
+	
+	var enemy_entities = [];
+	for each (var ent in entities_nearby)
+	{
+		// Don't count buildings as they won't repell the trader if there are no mobile units that could capture the ship.
+		var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI); 
+		if (!cmpUnitAI) 
+			continue;
+		var cmpOwnership = Engine.QueryInterface(ent, IID_Ownership);
+		var playerMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_PlayerManager);
+		var cmpPlayer = Engine.QueryInterface(playerMan.GetPlayerByID(cmpOwnership.GetOwner()), IID_Player);
+		// skip inhabitants of the gallic village as well as allies: 
+		if (cmpOwnership.GetOwner() == DEFENDER_PLAYER || cmpPlayer.IsAlly(DEFENDER_PLAYER))
+			++gauls_nearby_village_count;
+		else
+		{
+			
+			// it's an enemy:
+			enemy_entities.push(ent);
+		}
+	}
+	
 	 
 	// give recommendation.
 	if (gauls_nearby_village_count > enemies_nearby_village_count)
@@ -1583,13 +1718,18 @@ Trigger.prototype.PerformTrade = function(currentHarbour) // <-- every gaul can 
 
 function grant_one_time_druid_reinforcements()
 {
+	if (random_abort(50))
+		return false;
+
 	// TODO Or rather use the druid for the spawn position?
 	var druid_trigger_point = cmpTrigger.GetTriggerPoints("D")[0];
 
-	var count = 10; 
+	var count = 10;
 	TriggerHelper.SpawnUnits(druid_trigger_point, "units/gaul_infantry_javelinist_a", count, DEFENDER_PLAYER); 
 	// TODO more diversity! 
+	return true; 
 }	
+
 
 cmpTrigger.major_enemy_attack_probability = .1;
 function lessen_major_enemy_attack_probability()
@@ -1791,7 +1931,7 @@ function random_abort(abort_chance_percent_float_or_int, abort_when_greater_than
 
 function pickRandomly(list)
 {
-	if (!list || !list.length || list.length < 0)
+	if (!list || !list.length || list.length < 1)
 		return undefined;
 
 	return list[Math.round(Math.random() * (list.length - 1), 0)];
