@@ -972,7 +972,9 @@ Trigger.prototype.spawn_initial_gauls = function(data)
 	// both common units for now.
 	units_to_spawn = [
 			// heroes
-			{"template": "units/gaul_hero_asterisk", "count": 2}
+			{"template": "units/gaul_idefisk", "count": 1}
+			, {"template": "units/celt_fat_gaul", "count": 10}
+			, {"template": "units/gaul_hero_asterisk", "count": 2}
 	];
 	var trigger_points_outside_gallic_village = this.GetTriggerPoints("B");
 	
