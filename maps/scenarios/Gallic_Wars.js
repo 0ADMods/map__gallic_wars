@@ -40,7 +40,7 @@ Trigger.prototype.storyline[DEFENDER_PLAYER] = {
 
 	"init": ["start"], // <-- "tutorial"
 	"start": ["spawn_initial_gauls", "spawn_initial_neutral", "spawn_initial_enemy", "intro", "construction_phase"], // <-- can be an action/function or a state. If it's a state, then the state's entry conditions are checked and the state entered if the conditions are met.
-	"construction_phase": [/*"fortify_village", "defend_village_selector"*/, "defend_village_selector"],
+	"construction_phase": ["set_construction_phase_timeout_starttime_if_undefined", "random_amass_enemy", "defend_village_selector"],
 	"defend_village_selector": ["defend_village_against_increasing_force", "defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties", "defend_village_against_decreasing_force", "defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties", "village_is_fallen"],// TODO move enable interval_trigger_ ... to the common defend_village_selector and add function call that increases enemy strength.
 	"village_is_fallen": ["terminate_doom_of_gaul"],
 	"defend_village_against_increasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "druid_is_rescued", "druid_is_dead", "random_enemy_centurio_excursion", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_more_frequent", "defend_village_selector"],
@@ -225,10 +225,28 @@ Trigger.prototype.leaveConditions["construction_phase"] = function(cmpTrigger)
 	if (buildings_built_count > cmpTrigger.CONSTRUCTION_PHASE_BUILDING_COUNT_TO_CONSTRUCT) 
 		cmpTrigger.isAlreadyAchieved["construction_phase"] = true;
 	
+	var enemy_entities = cmpRangeMan.GetEntitiesByPlayer(INTRUDER_PLAYER);
+	var enemy_units = enemy_entities.filter(function(e) { if (Engine.QueryInterface(e, IID_UnitAI)) return true; return false; }); 
 
-	return cmpTrigger.isAlreadyAchieved["construction_phase"] && cmpTrigger.isAlreadyAchieved["construction_phase"] === true || units.length > cmpTrigger.CONSTRUCTION_PHASE_TRESHOLD_ENEMY_NUMEROUS || now() > cmpTrigger.CONSTRUCTION_PHASE_TIMEOUT;
+	if (cmpTrigger.isAlreadyAchieved["construction_phase"] && cmpTrigger.isAlreadyAchieved["construction_phase"] === true)
+		return true;
+	if (enemy_units.length > units.length /*cmpTrigger.CONSTRUCTION_PHASE_TRESHOLD_ENEMY_NUMEROUS*/)
+	{
+		PushGUINotification([DEFENDER_PLAYER], "Spy: 'The enemy is more numerous than us. They are amassing near the village. We must finish our fortifications.");
+		return true;
+	}
+	if (now() > cmpTrigger.construction_phase_timeout_starttime + cmpTrigger.CONSTRUCTION_PHASE_TIMEOUT)
+	{
+		PushGUINotification([DEFENDER_PLAYER], "Spy: 'The enemy is more numerous than us. They are amassing near the village. We must finish our fortifications.");
+		return true;
+	}
+	return false;
 }
-
+Trigger.prototype.set_construction_phase_timeout_starttime_if_undefined = function()
+{
+	if (!this.construction_phase_timeout_starttime)
+		this.construction_phase_timeout_starttime = now();
+}
 
 Trigger.prototype.enterConditions["village_is_fallen"] = function(cmpTrigger)
 {
@@ -266,8 +284,7 @@ function are_criteria_for_reinforcements_met(cmpTrigger)
 	if (!cmpTrigger.enterConditions["druid_is_rescued"](cmpTrigger))
 		return false;
 
-	// If it's not yet been achieved, permit to enter the state:
-	return !cmpTrigger.isAlreadyAchieved["defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties"];
+	return true;
 	
 }
 
@@ -294,8 +311,7 @@ function are_criteria_for_increasing_force_met(cmpTrigger)
 Trigger.prototype.enterConditions["defend_village_against_decreasing_force"] = function(cmpTrigger)
 {
 	// If the druid lives and is rescued, then this state must not be entered.
-	return !cmpTrigger.isAlreadyAchieved["defend_village_against_decreasing_force"]
-			&& !are_criteria_for_increasing_force_met(cmpTrigger) && !are_criteria_for_reinforcements_met(cmpTrigger);
+	return !are_criteria_for_increasing_force_met(cmpTrigger) && !are_criteria_for_reinforcements_met(cmpTrigger);
 }
 
 Trigger.prototype.enterConditions["defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties"] = function(cmpTrigger)
@@ -596,7 +612,7 @@ Trigger.prototype.RangeAction = function(data)
 	else
 	{
 		// restore old enterCondition examination.
-		this.enterConditions["turn_the_tide"] = this.enterConditionsPrevious["turn_the_tide"]
+		this.enterConditions["turn_the_tide"] = this.enterConditionsPrevious["turn_the_tide"];
 	}
 
 	
@@ -820,8 +836,8 @@ Trigger.prototype.CONSTRUCTION_PHASE_TIMEOUT = 120 * SECOND; // 2min
 
 
 
-cmpTrigger.is_debug = false;
-//cmpTrigger.is_debug = true;
+//cmpTrigger.is_debug = false;
+cmpTrigger.is_debug = true;
 
 // STORY START
 cmpTrigger.state = "init";
@@ -902,7 +918,7 @@ Trigger.prototype.storylineMachine = function()
 				this.isAlreadyAchieved[DEFENDER_PLAYER] && this.isAlreadyAchieved[DEFENDER_PLAYER][state];
 		// Has to be within this loop as the function result may change dynamically depending on the current situation on the map.
 		is_leave_condition_not_met = leaveCondition != undefined 
-						&& (leaveCondition === false  || typeof leaveCondition == 'function' && leaveCondition(this) == false);
+						&& (typeof leaveCondition != 'function' && leaveCondition === false  || typeof leaveCondition == 'function' && leaveCondition(this) == false);
 		
 		// Can the next state be entered?
 		var d = {"state": state, "state_options": state_options, "is_leave_condition_not_met": is_leave_condition_not_met}
@@ -1108,7 +1124,7 @@ Trigger.prototype.spawn_initial_gauls = function(data)
 	
 }
 
-Trigger.prototype.spawn_initial = function(entities_to_spawn, playerId, spawn_location_entities, allowSpawningFromBuildings = true, alternateTriggerPointAndBuildingSpawning = true)
+Trigger.prototype.spawn_initial = function(entities_to_spawn, playerId, spawn_location_entities, allowSpawningFromBuildings = true, alternateTriggerPointAndBuildingSpawning = true, valueModificationsToApplyToExistingBuildingsCache = undefined)
 {
 	this.playerData[playerId].initial_buildings = [];
 	this.playerData[playerId].initial_units = [];
@@ -1123,7 +1139,21 @@ Trigger.prototype.spawn_initial = function(entities_to_spawn, playerId, spawn_lo
 			this.playerData[playerId].initial_units.push(ent);
 		var cmpBuildingAI = Engine.QueryInterface(ent, IID_BuildingAI);
 		if (cmpBuildingAI)
+		{
 			this.playerData[playerId].initial_buildings.push(ent);
+			if (valueModificationsToApplyToExistingBuildingsCache)
+				var cmpTechManager = QueryOwnerInterface(ent, IID_TechnologyManager);
+				for /*each*/ (var key in valueModificationsToApplyToExistingBuildingsCache)
+				{
+					//var valueName = "TerritoryDecay/HealthDecayRate";
+					//cmpTechManager.modifications[valueName] = {"tech_key_all_but_affects_and_value": "value of technology key-value pair"};
+					if (!cmpTechManager.modificationCache[key])
+						cmpTechManager.modificationCache[key] = [];
+					if (!cmpTechManager.modificationCache[key][ent])
+						cmpTechManager.modificationCache[key][ent] = {"origValue": -1, "newValue": -1};
+					cmpTechManager.modificationCache[key][ent]["newValue"] = valueModificationsToApplyToExistingBuildingsCache[key];
+				}
+		}
 	}
 
 
@@ -1165,28 +1195,31 @@ Trigger.prototype.spawn_initial_neutral = function(data)
 	// TODO
 }
 
-Trigger.prototype.spawn_initial_enemy = function(data)
+// Spawn buildings and units and add to the default count.
+Trigger.prototype.units_to_spawn = []; 
+Trigger.prototype.units_to_spawn[INTRUDER_PLAYER] = [
+		{"template": "units/rome_infantry_javelinist_b", "count": 10}
+		, {"template": "units/rome_infantry_swordsman_b", "count": 10}
+		, {"template": "units/rome_infantry_spearman_b", "count": 10}
+
+		// champions
+		, {"template": "units/rome_champion_infantry", "count": 10}
+		, {"template": "units/rome_champion_cavalry", "count": 10}
+
+];
+
+Trigger.prototype.spawn_initial_enemy = function()
 {
-	// Spawn buildings and units and add to the default count.
-	var units_to_spawn = [
-			{"template": "units/rome_infantry_javelinist_b", "count": 10}
-			, {"template": "units/rome_infantry_swordsman_b", "count": 10}
-			, {"template": "units/rome_infantry_spearman_b", "count": 10}
-
-			// champions
-			, {"template": "units/rome_champion_infantry", "count": 10}
-			, {"template": "units/rome_champion_cavalry", "count": 10}
-
-	];
-	
+	// Those involve in major attacks and fortress defence:
 	var trigger_points_in_roman_camp = this.GetTriggerPoints("F");
-	// those involve in major attacks.
-	this.spawn_initial(units_to_spawn, INTRUDER_PLAYER, trigger_points_in_roman_camp);
+	var modificationsToApplyToExistingBuildings = {"TerritoryDecay/HealthDecayRate": 0};
+	this.spawn_initial(this.units_to_spawn[INTRUDER_PLAYER], INTRUDER_PLAYER, trigger_points_in_roman_camp, true, true, modificationsToApplyToExistingBuildings);
 
 	// Special units to keep track of individually:
 	// centurio:
 	var ent = this.spawn_new_enemy_centurio(); 
 	this.playerData[INTRUDER_PLAYER].initial_units.push(ent);
+	warn("Spawning centurio: " + this.playerData[INTRUDER_PLAYER].leader);
 
 	var cmpUnitAI = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitAI);
 //	cmpUnitAI.PushOrderFront(
@@ -1197,14 +1230,44 @@ Trigger.prototype.spawn_initial_enemy = function(data)
 	
 }
 
+Trigger.prototype.random_amass_enemy = function(spawn_points)
+{	
+	var trigger_points_in_roman_camp = this.GetTriggerPoints("F");
+	this.spawn(trigger_points_in_roman_camp, this.units_to_spawn[INTRUDER_PLAYER]);
+}
+
+Trigger.prototype.spawn = function(spawn_points, units_to_spawn)
+{
+	if (!spawn_points && !spawn_points.length)
+	{
+		this.debug("Amass Enemy: No spawn points given.");
+		return;
+	}
+	var units_spawned = [];
+	for each (var unit_to_spawn in units_to_spawn)
+	{
+		if (random_abort(33))
+			continue;
+			
+		var ents = TriggerHelper.SpawnUnits(spawn_points, unit_to_spawn.template, Math.round(unit_to_spawn.count * Math.random(), 0));
+		if (!ents)
+			continue;
+		for each (var e in ents)
+			units_spawned.push(e);
+	}
+}
+
+
 Trigger.prototype.spawn_new_enemy_centurio = function()
 {
 
 	var ent_data =  {"template": "units/rome_centurio_imperial", "count": 1};
 	var western_most_road_trigger_point = cmpTrigger.GetTriggerPoints("G")[0];
 	var entities = TriggerHelper.SpawnUnits(western_most_road_trigger_point, ent_data.template, ent_data.count, INTRUDER_PLAYER);
+	if (!entities || !entities.length)
+		return undefined;
 	this.playerData[INTRUDER_PLAYER].leader = entities[0];
-	
+	this.debug("A new centurio arrived: " + this.playerData[INTRUDER_PLAYER].leader);	
 	var fortress_trigger_point = cmpTrigger.GetTriggerPoints("F")[0]; 
 	if (!fortress_trigger_point)
 	{
