@@ -751,6 +751,7 @@ cmpTrigger.enemy_attack_unit_count = 10;
 cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MAX = 1000; 
 cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_STEP = 1;
    
+cmpTrigger.construction_phase_timeout_starttime = now();
 
 var composition_very_weak = {"Classes": ["Infantry+Melee+Basic"], "frequency_or_weight": 10};
 var composition_weak = {"Classes": ["Melee Ranged"], "frequency_or_weight": 15};
@@ -1270,8 +1271,8 @@ Trigger.prototype.spawn = function(spawn_points, units_to_spawn,playerId)
 	{
 		if (random_abort(33))
 			continue;
-			
-		var ents = TriggerHelper.SpawnUnits(spawn_points, unit_to_spawn.template, +Math.max(1, Math.round(unit_to_spawn.count * Math.random()* 2, 0)), playerId);
+		var chosen_spawn_point = pickRandomly(spawn_points);	
+		var ents = TriggerHelper.SpawnUnits(chosen_spawn_point, unit_to_spawn.template, +Math.max(1, Math.round(unit_to_spawn.count * Math.random()* 2, 0)), playerId);
 		if (!ents)
 			continue;
 		for each (var e in ents)
@@ -1306,7 +1307,7 @@ Trigger.prototype.spawn_new_enemy_centurio = function()
 		cmpUnitMotion.MoveToTargetRange(fortress_trigger_point, 0, 20);
 	}
 	// reactivate this achievement:
-	this.IsAlreadyAchieved["react_if_enemy_leader_is_gone"] = false;
+	this.isAlreadyAchieved["react_if_enemy_leader_is_gone"] = false;
 	return entities[0];
 }
 
@@ -1449,7 +1450,7 @@ Trigger.prototype.random_make_call_to_rescue_the_druid = function()
 
 Trigger.prototype.react_if_enemy_leader_is_gone = function()
 {
-	if (!this.IsAlreadyAchieved["react_if_enemy_leader_is_gone"])
+	if (!this.isAlreadyAchieved["react_if_enemy_leader_is_gone"])
 	{
 		var leader = this.playerData[INTRUDER_PLAYER].leader;
 		if (leader)
@@ -1458,7 +1459,7 @@ Trigger.prototype.react_if_enemy_leader_is_gone = function()
 			{
 				var cmpIdentity = Engine.QueryInterface(leader, IID_Identity);
 				PushGUINotification([DEFENDER_PLAYER], "The Enemy leader " + cmpIdentity.GetGenericName() + " has been captured or killed.");
-				this.IsAlreadyAchieved["react_if_enemy_leader_is_gone"] = true;
+				this.isAlreadyAchieved["react_if_enemy_leader_is_gone"] = true;
 			}
 	}
 	
