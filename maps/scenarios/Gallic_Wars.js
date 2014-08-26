@@ -55,7 +55,7 @@ Trigger.prototype.storyline[DEFENDER_PLAYER] = {
 	
  	// once the enemy centurio was killed or captured, we enter:
 	"defend_village_against_decreasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "random_launch_major_enemy_assault", "enemy_centurio_excursion", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "defend_village_selector"],
-	"defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties": [ "enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "random_launch_major_enemy_assault", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "lessen_major_enemy_attack_probability", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker" "turn_the_tide", "defend_village_selector"],
+	"defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties": [ "enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "random_launch_major_enemy_assault", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "lessen_major_enemy_attack_probability", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "turn_the_tide", "defend_village_selector"],
 
 	"hurry_back_to_defend_village": ["defend_village_against_increasing", "defend_village"],
 	"wipe_out_enemy": ["less_than_x_population_count", "victory"],
@@ -158,6 +158,14 @@ Trigger.prototype.messages["wipe_out_enemy"] = function()
 }
 
 
+Trigger.prototype.messages["enemy_turns_the_tide"] = function()
+{
+	PushGUINotification(
+		[DEFENDER_PLAYER], 
+		"Belenus! Julius Caesar has sent a new Centurio. That's a setback."
+	);
+	
+}
 
 
 
@@ -299,6 +307,7 @@ Trigger.prototype.enterConditions["defend_village_against_increasing_force_galli
 
 function are_criteria_for_increasing_force_met(cmpTrigger)
 {
+	warn('leader: ' + cmpTrigger.playerData[INTRUDER_PLAYER].leader);
 	// Is enemy centurio gone?
 	if (!cmpTrigger.playerData[INTRUDER_PLAYER].leader)
 		return false;
@@ -1243,10 +1252,10 @@ Trigger.prototype.spawn_initial_enemy = function()
 Trigger.prototype.random_amass_enemy = function(spawn_points)
 {	
 	var trigger_points_in_roman_camp = this.GetTriggerPoints("F");
-	this.spawn(trigger_points_in_roman_camp, this.units_to_spawn[INTRUDER_PLAYER]);
+	this.spawn(trigger_points_in_roman_camp, this.units_to_spawn[INTRUDER_PLAYER], INTRUDER_PLAYER);
 }
 
-Trigger.prototype.spawn = function(spawn_points, units_to_spawn)
+Trigger.prototype.spawn = function(spawn_points, units_to_spawn, playerId)
 {
 	if (!spawn_points && !spawn_points.length)
 	{
@@ -1259,7 +1268,7 @@ Trigger.prototype.spawn = function(spawn_points, units_to_spawn)
 		if (random_abort(33))
 			continue;
 			
-		var ents = TriggerHelper.SpawnUnits(spawn_points, unit_to_spawn.template, Math.round(unit_to_spawn.count * Math.random(), 0));
+		var ents = TriggerHelper.SpawnUnits(spawn_points, unit_to_spawn.template, Math.round(unit_to_spawn.count * Math.random(), 0), playerId);
 		if (!ents)
 			continue;
 		for each (var e in ents)
@@ -1301,10 +1310,11 @@ Trigger.prototype.SpawnEnemyAndAttack = function(data)
 {
 
 	// spawn armies.
-	var spawned_units_count = -1; 
+	var spawned_units_count = 0; 
 	var spawned_units = [];
 	var spawn_points = [this.GetTriggerPoints("F"), this.GetTriggerPoints("G"), this.GetTriggerPoints("D"), this.GetTriggerPoints("I"), this.GetTriggerPoints("J")];
-	while (++spawned_units_count < this.enemy_attack_unit_count)
+	warn('Spawning ' + this.enemy_attack_unit_count + ' units.');
+	while (spawned_units_count < this.enemy_attack_unit_count)
 	{
 		var where = pickRandomly(spawn_points);
 		where = pickRandomly(where);
@@ -1315,7 +1325,11 @@ Trigger.prototype.SpawnEnemyAndAttack = function(data)
 		var spawned_units_of_same_type = TriggerHelper.SpawnUnits(where, unit_to_spawn.template.replace("{Civ}", "rome"), unit_to_spawn.count, INTRUDER_PLAYER);
 		
 		for each (var spawned_unit in spawned_units_of_same_type)
+		{
 			spawned_units.push(spawned_unit);
+			++spawned_units_count;
+		}
+		
 	}
 
 	 
@@ -1374,6 +1388,7 @@ Trigger.prototype.enable_interval_trigger_that_launches_enemy_attacks = function
 	data.delay = 1000; // launch first wave in one second from now.
 	data.interval = cmpTrigger.enemy_attack_interval;
 	data.overwrite_existing = true;
+	this.debug('Enemy attack interval: ' + cmpTrigger.enemy_attack_interval);
 	this.RegisterTrigger("OnInterval", "SpawnEnemyAndAttack", data);
 	
 	this.EnableTrigger("OnInterval", "SpawnEnemyAndAttack");
