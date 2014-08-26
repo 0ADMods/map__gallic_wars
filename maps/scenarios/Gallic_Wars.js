@@ -284,7 +284,7 @@ function are_criteria_for_reinforcements_met(cmpTrigger)
 {
 	// Is druid (still) alive?
 	var is_druid_alive = !cmpTrigger.enterConditions["druid_is_dead"](cmpTrigger);
-	this.debug("is_druid_alive: " + is_druid_alive);
+	cmpTrigger.debug("is_druid_alive: " + is_druid_alive);
 	if (!is_druid_alive)
 		return false;
 	
