@@ -2,11 +2,11 @@
 <COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
   <asset>
     <contributor>
-      <author>Blender User</author>
+      <author>Stanislas Dolcini</author>
       <authoring_tool>Blender 2.71.0 commit date:2014-06-25, commit time:18:36, hash:9337574</authoring_tool>
     </contributor>
-    <created>2014-08-19T01:51:18</created>
-    <modified>2014-08-19T01:51:18</modified>
+    <created>2014-08-26T11:20:29</created>
+    <modified>2014-08-26T11:20:29</modified>
     <unit name="inch" meter="0.0254"/>
     <up_axis>Z_UP</up_axis>
   </asset>
@@ -16,7 +16,7 @@
     <geometry id="round_t_f-Geometry-mesh" name="round_t_f-Geometry">
       <mesh>
         <source id="round_t_f-Geometry-mesh-positions">
-          <float_array id="round_t_f-Geometry-mesh-positions-array" count="9">2.49999e-6 -2.65909e-6 0.001433849 -0.002139449 -0.005273222 2.81943e-4 4.052e-5 -0.005691707 2.81943e-4</float_array>
+          <float_array id="round_t_f-Geometry-mesh-positions-array" count="9">2.49999e-6 -2.65909e-6 0.001433849 -0.002139449 -0.005273163 2.81943e-4 4.052e-5 -0.005691707 2.81943e-4</float_array>
           <technique_common>
             <accessor source="#round_t_f-Geometry-mesh-positions-array" count="3" stride="3">
               <param name="X" type="float"/>
@@ -26,9 +26,9 @@
           </technique_common>
         </source>
         <source id="round_t_f-Geometry-mesh-normals">
-          <float_array id="round_t_f-Geometry-mesh-normals-array" count="9">-0.03808706 -0.1985229 0.979339 -0.03808706 -0.1985229 0.979339 -0.03808706 -0.1985229 0.979339</float_array>
+          <float_array id="round_t_f-Geometry-mesh-normals-array" count="3">-0.0381155 -0.1985512 0.9793491</float_array>
           <technique_common>
-            <accessor source="#round_t_f-Geometry-mesh-normals-array" count="3" stride="3">
+            <accessor source="#round_t_f-Geometry-mesh-normals-array" count="1" stride="3">
               <param name="X" type="float"/>
               <param name="Y" type="float"/>
               <param name="Z" type="float"/>
@@ -52,7 +52,7 @@
           <input semantic="NORMAL" source="#round_t_f-Geometry-mesh-normals" offset="1"/>
           <input semantic="TEXCOORD" source="#round_t_f-Geometry-mesh-map-0" offset="2" set="0"/>
           <vcount>3 </vcount>
-          <p>1 0 0 2 1 1 0 2 2</p>
+          <p>1 0 0 2 0 1 0 0 2</p>
         </polylist>
       </mesh>
     </geometry>
@@ -64,13 +64,13 @@
         <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
         <instance_geometry url="#round_t_f-Geometry-mesh"/>
         <node id="prop_platform" name="prop_platform" type="NODE">
-          <matrix sid="transform">1 0 0 0 0 2.39611e-6 1 0 0 -1 2.39611e-6 3.10839 0 0 0 1</matrix>
+          <matrix sid="transform">1 0 0 0 0 2.34047e-6 1 0 0 -1 2.34047e-6 3.10839 0 0 0 1</matrix>
         </node>
         <node id="prop_ground_left" name="prop_ground_left" type="NODE">
-          <matrix sid="transform">1 0 0 -0.8491551 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+          <matrix sid="transform">1 0 0 -0.9590067 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
         </node>
         <node id="prop_ground_right" name="prop_ground_right" type="NODE">
-          <matrix sid="transform">1 0 0 0.8491549 0 1 0 1.41015e-6 0 0 1 0 0 0 0 1</matrix>
+          <matrix sid="transform">1 0 0 1.5 0 1 0 1.41015e-6 0 0 1 0 0 0 0 1</matrix>
         </node>
       </node>
     </visual_scene>
