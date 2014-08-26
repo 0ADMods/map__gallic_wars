@@ -41,12 +41,12 @@ Trigger.prototype.storyline[DEFENDER_PLAYER] = {
 	"init": ["start"], // <-- "tutorial"
 	"start": ["spawn_initial_gauls", "spawn_initial_neutral", "spawn_initial_enemy", "intro", "construction_phase"], // <-- can be an action/function or a state. If it's a state, then the state's entry conditions are checked and the state entered if the conditions are met.
 	"construction_phase": ["set_construction_phase_timeout_starttime_if_undefined", "random_amass_enemy", "defend_village_selector"],
-	"defend_village_selector": ["defend_village_against_increasing_force", "defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties", "defend_village_against_decreasing_force", "defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties", "village_is_fallen"],// TODO move enable interval_trigger_ ... to the common defend_village_selector and add function call that increases enemy strength.
+	"defend_village_selector": ["defend_village_against_increasing_force", "defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties", "defend_village_against_decreasing_force", "defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties", "village_is_fallen", "react_if_enemy_leader_is_gone"],// TODO move enable interval_trigger_ ... to the common defend_village_selector and add function call that increases enemy strength.
 	"village_is_fallen": ["terminate_doom_of_gaul"],
-	"defend_village_against_increasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "druid_is_rescued", "druid_is_dead", "random_enemy_centurio_excursion", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_more_frequent", "make_enemy_attacks_stronger", "defend_village_selector"],
+	"defend_village_against_increasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "druid_is_rescued", "druid_is_dead", "random_enemy_centurio_excursion", "random_launch_major_enemy_assault", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_more_frequent", "make_enemy_attacks_stronger", "defend_village_selector"],
 	"druid_is_rescued": ["grant_one_time_druid_reinforcements", "lessen_major_enemy_attack_probability", "make_enemy_attacks_weaker", "defend_village_selector"],
 	"druid_is_dead": ["grant_one_time_druid_reinforcements", "increase_major_enemy_attack_probability", "make_enemy_attacks_stronger", "defend_village_selector"],
-	"defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties": ["enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "random_enemy_centurio_excursion", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_more_frequent", "make_enemy_attacks_stronger", "druid_is_dead", "defend_village_selector"/*must be the last item to avoid the danger of an endless loop if no state can be reached before we over and over reenter defend_village_xy!*/],
+	"defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties": ["enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "random_launch_major_enemy_assault", "random_enemy_centurio_excursion", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_more_frequent", "make_enemy_attacks_stronger", "druid_is_dead", "defend_village_selector"/*must be the last item to avoid the danger of an endless loop if no state can be reached before we over and over reenter defend_village_xy!*/],
 	
 	"turn_the_tide": ["disable_interval_trigger_that_launches_enemy_attacks", "destroy_enemy_encampment_within_time"],
 	"destroy_enemy_encampment_within_time": ["turning_the_tide_failed", "tide_is_turned"],
@@ -55,7 +55,7 @@ Trigger.prototype.storyline[DEFENDER_PLAYER] = {
 	
  	// once the enemy centurio was killed or captured, we enter:
 	"defend_village_against_decreasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "random_launch_major_enemy_assault", "enemy_centurio_excursion", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "defend_village_selector"],
-	"defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties": [ "enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "random_launch_major_enemy_assault", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "lessen_major_enemy_attack_probability", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "turn_the_tide", "defend_village_selector"],
+	"defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties": [ "enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "lessen_major_enemy_attack_probability", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "turn_the_tide", "defend_village_selector"],
 
 	"hurry_back_to_defend_village": ["defend_village_against_increasing", "defend_village"],
 	"wipe_out_enemy": ["less_than_x_population_count", "victory"],
@@ -276,20 +276,22 @@ Trigger.prototype.enterConditions["village_is_fallen"] = function(cmpTrigger)
 // DEFEND VILLAGE SELECTOR CONDITIONS (interacting and dependent on each other. Note: only one at a time must be reachable!)
 Trigger.prototype.enterConditions["defend_village_against_increasing_force"] = function(cmpTrigger)
 {
-	return 
-//		!cmpTrigger.isAlreadyAchieved["defend_village_against_increasing_force"] // <-- can theoretically be spared as already called in the storylineMachine.
-//			&&
-			 are_criteria_for_increasing_force_met(cmpTrigger) && !are_criteria_for_reinforcements_met(cmpTrigger);
+	warn('are_criteria_for_increasing_force_met: ' + are_criteria_for_reinforcements_met(cmpTrigger) + ' are_criteria_for_reinforcements_met: ' + are_criteria_for_reinforcements_met(cmpTrigger));
+	return are_criteria_for_increasing_force_met(cmpTrigger) && !are_criteria_for_reinforcements_met(cmpTrigger);
 }
 
 function are_criteria_for_reinforcements_met(cmpTrigger)
 {
 	// Is druid (still) alive?
-	if (cmpTrigger.enterConditions["druid_is_dead"](cmpTrigger))
+	var is_druid_alive = cmpTrigger.enterConditions["druid_is_dead"](cmpTrigger);
+	warn("is_druid_alive: " + is_druid_alive);
+	if (is_druid_alive)
 		return false;
 	
 	// Has the druid been rescued?
-	if (!cmpTrigger.enterConditions["druid_is_rescued"](cmpTrigger))
+	var has_druid_been_rescued = cmpTrigger.enterConditions["druid_is_rescued"](cmpTrigger);
+	warn("druid_is_rescued: " + has_druid_been_rescued);
+	if (!has_druid_been_rescued)
 		return false;
 
 	return true;
@@ -298,22 +300,23 @@ function are_criteria_for_reinforcements_met(cmpTrigger)
 
 Trigger.prototype.enterConditions["defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties"] = function(cmpTrigger)
 {
-	// inherit from the roman centurio existence/alive condition:
-	return
-//		!cmpTrigger.isAlreadyAchieved["defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties"]
-//			&&
-			 are_criteria_for_increasing_force_met(cmpTrigger) && are_criteria_for_reinforcements_met(cmpTrigger);
+	return are_criteria_for_increasing_force_met(cmpTrigger) && are_criteria_for_reinforcements_met(cmpTrigger);
 }
 
 function are_criteria_for_increasing_force_met(cmpTrigger)
 {
 	warn('leader: ' + cmpTrigger.playerData[INTRUDER_PLAYER].leader);
 	// Is enemy centurio gone?
-	if (!cmpTrigger.playerData[INTRUDER_PLAYER].leader)
+	if (cmpTrigger.playerData[INTRUDER_PLAYER].leader == undefined)
 		return false;
+	var cmpHealth = Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_Health);
+	if (!cmpHealth || cmpHealth.GetHitpoints() < 1)
+		return false;
+	
 	var cmpUnitAI = Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI);
-	if (!cmpUnitAI || !cmpUnitAI.TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader))
-		return false;
+//	if (!cmpUnitAI || !cmpUnitAI.TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader))
+//		return false;
+
 	return true;
 }
 
@@ -855,8 +858,8 @@ Trigger.prototype.CONSTRUCTION_PHASE_TIMEOUT = 2 * 60 * SECOND; // 2min
 
 
 
-//cmpTrigger.is_debug = false;
-cmpTrigger.is_debug = true;
+cmpTrigger.is_debug = false;
+//cmpTrigger.is_debug = true;
 
 // STORY START
 cmpTrigger.state = "init";
@@ -1255,9 +1258,9 @@ Trigger.prototype.random_amass_enemy = function(spawn_points)
 	this.spawn(trigger_points_in_roman_camp, this.units_to_spawn[INTRUDER_PLAYER], INTRUDER_PLAYER);
 }
 
-Trigger.prototype.spawn = function(spawn_points, units_to_spawn, playerId)
+Trigger.prototype.spawn = function(spawn_points, units_to_spawn,playerId)
 {
-	if (!spawn_points && !spawn_points.length)
+	if (!spawn_points || !spawn_points.length)
 	{
 		this.debug("Amass Enemy: No spawn points given.");
 		return;
@@ -1268,7 +1271,7 @@ Trigger.prototype.spawn = function(spawn_points, units_to_spawn, playerId)
 		if (random_abort(33))
 			continue;
 			
-		var ents = TriggerHelper.SpawnUnits(spawn_points, unit_to_spawn.template, Math.round(unit_to_spawn.count * Math.random(), 0), playerId);
+		var ents = TriggerHelper.SpawnUnits(spawn_points, unit_to_spawn.template, +Math.max(1, Math.round(unit_to_spawn.count * Math.random()* 2, 0)), playerId);
 		if (!ents)
 			continue;
 		for each (var e in ents)
@@ -1302,6 +1305,8 @@ Trigger.prototype.spawn_new_enemy_centurio = function()
 		var cmpUnitMotion = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitMotion);
 		cmpUnitMotion.MoveToTargetRange(fortress_trigger_point, 0, 20);
 	}
+	// reactivate this achievement:
+	this.IsAlreadyAchieved["react_if_enemy_leader_is_gone"] = false;
 	return entities[0];
 }
 
@@ -1386,9 +1391,9 @@ Trigger.prototype.enable_interval_trigger_that_launches_enemy_attacks = function
 	data = {};
 	data.enabled = false;
 	data.delay = 1000; // launch first wave in one second from now.
-	data.interval = cmpTrigger.enemy_attack_interval;
+	data.interval = this.enemy_attack_interval;
 	data.overwrite_existing = true;
-	this.debug('Enemy attack interval: ' + cmpTrigger.enemy_attack_interval);
+	this.debug('Enemy attack interval: ' + this.enemy_attack_interval);
 	this.RegisterTrigger("OnInterval", "SpawnEnemyAndAttack", data);
 	
 	this.EnableTrigger("OnInterval", "SpawnEnemyAndAttack");
@@ -1436,13 +1441,28 @@ Trigger.prototype.make_enemy_attacks_weaker = function()
 Trigger.prototype.random_make_call_to_rescue_the_druid = function()
 {
 	// abort chance 5 %
-	if (random_abort(.05))
+	if (random_abort(5))
 		return ;
 	
 	PushGUINotification([DEFENDER_PLAYER], "We have received a message from our druid: 'My Gallic friends, please increase your efforts to rescue me! I don't know where they brought me, but I can sense it must be in the forrest ... and it smells like if they made a fire.'");
 }
 
-
+Trigger.prototype.react_if_enemy_leader_is_gone = function()
+{
+	if (!this.IsAlreadyAchieved["react_if_enemy_leader_is_gone"])
+	{
+		var leader = this.playerData[INTRUDER_PLAYER].leader;
+		if (leader)
+			var cmpHealth = Engine.QueryInterface(leader, IID_Health);
+			if (!cmpHealth || cmpHealth.GetHitpoints() < 1)
+			{
+				var cmpIdentity = Engine.QueryInterface(leader, IID_Identity);
+				PushGUINotification([DEFENDER_PLAYER], "The Enemy leader " + cmpIdentity.GetGenericName() + " has been captured or killed.");
+				this.IsAlreadyAchieved["react_if_enemy_leader_is_gone"] = true;
+			}
+	}
+	
+}
 
 Trigger.prototype.random_enemy_centurio_excursion = function()
 {
@@ -1556,7 +1576,7 @@ function getNearbyEnemiesWithComponent(source, range_min, range_max, component)
 }
 
 
-function give_counter_strike_recommendation()
+Trigger.prototype.give_counter_strike_recommendation = function()
 {
 	// analyze current situation on the battle fields:
 	// count enemies nearby village:
