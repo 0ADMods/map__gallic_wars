@@ -240,7 +240,7 @@ Trigger.prototype.leaveConditions["construction_phase"] = function(cmpTrigger)
 		return true;
 	if (enemy_units.length > units.length /*cmpTrigger.CONSTRUCTION_PHASE_TRESHOLD_ENEMY_NUMEROUS*/)
 	{
-		PushGUINotification([DEFENDER_PLAYER], "Spy: 'The enemy is more numerous than us. They are amassing near the village. We must finish our fortifications.");
+		PushGUINotification([DEFENDER_PLAYER], "Spy: 'The enemy is more numerous than us. They are amassing near the village. We must finish our fortifications.'");
 		return true;
 	}
 	if (now() > cmpTrigger.construction_phase_timeout_starttime + cmpTrigger.CONSTRUCTION_PHASE_TIMEOUT)
@@ -276,21 +276,21 @@ Trigger.prototype.enterConditions["village_is_fallen"] = function(cmpTrigger)
 // DEFEND VILLAGE SELECTOR CONDITIONS (interacting and dependent on each other. Note: only one at a time must be reachable!)
 Trigger.prototype.enterConditions["defend_village_against_increasing_force"] = function(cmpTrigger)
 {
-	this.debug('are_criteria_for_increasing_force_met: ' + are_criteria_for_reinforcements_met(cmpTrigger) + ' are_criteria_for_reinforcements_met: ' + are_criteria_for_reinforcements_met(cmpTrigger));
+	cmpTrigger.debug('are_criteria_for_increasing_force_met: ' + are_criteria_for_reinforcements_met(cmpTrigger) + ' are_criteria_for_reinforcements_met: ' + are_criteria_for_reinforcements_met(cmpTrigger));
 	return are_criteria_for_increasing_force_met(cmpTrigger) && !are_criteria_for_reinforcements_met(cmpTrigger);
 }
 
 function are_criteria_for_reinforcements_met(cmpTrigger)
 {
 	// Is druid (still) alive?
-	var is_druid_alive = cmpTrigger.enterConditions["druid_is_dead"](cmpTrigger);
+	var is_druid_alive = !cmpTrigger.enterConditions["druid_is_dead"](cmpTrigger);
 	this.debug("is_druid_alive: " + is_druid_alive);
-	if (is_druid_alive)
+	if (!is_druid_alive)
 		return false;
 	
 	// Has the druid been rescued?
 	var has_druid_been_rescued = cmpTrigger.enterConditions["druid_is_rescued"](cmpTrigger);
-	this.debug("druid_is_rescued: " + has_druid_been_rescued);
+	cmpTrigger.debug("druid_is_rescued: " + has_druid_been_rescued);
 	if (!has_druid_been_rescued)
 		return false;
 
@@ -305,7 +305,7 @@ Trigger.prototype.enterConditions["defend_village_against_increasing_force_galli
 
 function are_criteria_for_increasing_force_met(cmpTrigger)
 {
-	this.debug('leader: ' + cmpTrigger.playerData[INTRUDER_PLAYER].leader);
+	cmpTrigger.debug('leader: ' + cmpTrigger.playerData[INTRUDER_PLAYER].leader);
 	// Is enemy centurio gone?
 	if (cmpTrigger.playerData[INTRUDER_PLAYER].leader == undefined)
 		return false;
@@ -353,12 +353,13 @@ Trigger.prototype.enterConditions["druid_is_rescued"] = function(cmpTrigger)
 	var cmpOwnershipDruid = Engine.QueryInterface(cmpTrigger.playerData[DEFENDER_PLAYER].druid, IID_Ownership);
 	if (!cmpOwnershipDruid || cmpOwnershipDruid.GetOwner() != DEFENDER_PLAYER)
 		return false;
+	cmpTrigger.isAlreadyAchieved["druid_is_rescued"] = true;
 	return true;
 }
 
 Trigger.prototype.enterConditions["turn_the_tide"] = function(cmpTrigger)
 {
-	this.debug('leader: ' + cmpTrigger.playerData[INTRUDER_PLAYER].leader + ' isAlive: ' + Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader));
+	cmpTrigger.debug('leader: ' + cmpTrigger.playerData[INTRUDER_PLAYER].leader + ' isAlive: ' + Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader));
 	//if (cmpTrigger.playerData[INTRUDER_PLAYER] && cmpTrigger.playerData[INTRUDER_PLAYER].leader && Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader))
 	//	return false;
 
@@ -420,7 +421,7 @@ Trigger.prototype.countdown = function(data)
 
 Trigger.prototype.enterConditions["turning_the_tide_failed"] = function(cmpTrigger)
 {
-	if (this.turning_the_tide_timeout_timeleft > 0)
+	if (cmpTrigger.turning_the_tide_timeout_timeleft > 0)
 	{
 		//PushGUINotification([DEFENDER_PLAYER], "You have still time to take down the enemy fortress.");
 		return false;
@@ -1843,7 +1844,7 @@ Trigger.prototype.PerformTrade = function(currentHarbour) // <-- every gaul can 
 };
 
 
-function grant_one_time_druid_reinforcements()
+Trigger.prototype.grant_one_time_druid_reinforcements = function()
 {
 	if (random_abort(50))
 		return false;
@@ -1859,7 +1860,7 @@ function grant_one_time_druid_reinforcements()
 
 
 cmpTrigger.major_enemy_attack_probability = .1;
-function lessen_major_enemy_attack_probability()
+Trigger.prototype.lessen_major_enemy_attack_probability = function()
 {
 	this.debug('decrease major enemy attack probability');
 	if (cmpTrigger.major_enemy_attack_probability > .019)
@@ -1870,7 +1871,7 @@ function lessen_major_enemy_attack_probability()
 	
 }
 
-function increase_major_enemy_attack_probability()
+Trigger.prototype.increase_major_enemy_attack_probability = function()
 {
 	this.debug('increase major enemy attack probability');
 	if (cmpTrigger.major_enemy_attack_probability < .9999)
@@ -1882,7 +1883,7 @@ function increase_major_enemy_attack_probability()
 }
 		
 		
-function grant_gallic_neighbours_reinforcements()
+Trigger.prototype.grant_gallic_neighbours_reinforcements = function()
 {
 	// TODO improve
 	grant_one_time_druid_reinforcements();
