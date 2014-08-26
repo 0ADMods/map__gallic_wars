@@ -276,7 +276,7 @@ Trigger.prototype.enterConditions["village_is_fallen"] = function(cmpTrigger)
 // DEFEND VILLAGE SELECTOR CONDITIONS (interacting and dependent on each other. Note: only one at a time must be reachable!)
 Trigger.prototype.enterConditions["defend_village_against_increasing_force"] = function(cmpTrigger)
 {
-	warn('are_criteria_for_increasing_force_met: ' + are_criteria_for_reinforcements_met(cmpTrigger) + ' are_criteria_for_reinforcements_met: ' + are_criteria_for_reinforcements_met(cmpTrigger));
+	this.debug('are_criteria_for_increasing_force_met: ' + are_criteria_for_reinforcements_met(cmpTrigger) + ' are_criteria_for_reinforcements_met: ' + are_criteria_for_reinforcements_met(cmpTrigger));
 	return are_criteria_for_increasing_force_met(cmpTrigger) && !are_criteria_for_reinforcements_met(cmpTrigger);
 }
 
@@ -284,13 +284,13 @@ function are_criteria_for_reinforcements_met(cmpTrigger)
 {
 	// Is druid (still) alive?
 	var is_druid_alive = cmpTrigger.enterConditions["druid_is_dead"](cmpTrigger);
-	warn("is_druid_alive: " + is_druid_alive);
+	this.debug("is_druid_alive: " + is_druid_alive);
 	if (is_druid_alive)
 		return false;
 	
 	// Has the druid been rescued?
 	var has_druid_been_rescued = cmpTrigger.enterConditions["druid_is_rescued"](cmpTrigger);
-	warn("druid_is_rescued: " + has_druid_been_rescued);
+	this.debug("druid_is_rescued: " + has_druid_been_rescued);
 	if (!has_druid_been_rescued)
 		return false;
 
@@ -305,7 +305,7 @@ Trigger.prototype.enterConditions["defend_village_against_increasing_force_galli
 
 function are_criteria_for_increasing_force_met(cmpTrigger)
 {
-	warn('leader: ' + cmpTrigger.playerData[INTRUDER_PLAYER].leader);
+	this.debug('leader: ' + cmpTrigger.playerData[INTRUDER_PLAYER].leader);
 	// Is enemy centurio gone?
 	if (cmpTrigger.playerData[INTRUDER_PLAYER].leader == undefined)
 		return false;
@@ -358,7 +358,7 @@ Trigger.prototype.enterConditions["druid_is_rescued"] = function(cmpTrigger)
 
 Trigger.prototype.enterConditions["turn_the_tide"] = function(cmpTrigger)
 {
-	warn('leader: ' + cmpTrigger.playerData[INTRUDER_PLAYER].leader + ' isAlive: ' + Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader));
+	this.debug('leader: ' + cmpTrigger.playerData[INTRUDER_PLAYER].leader + ' isAlive: ' + Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader));
 	//if (cmpTrigger.playerData[INTRUDER_PLAYER] && cmpTrigger.playerData[INTRUDER_PLAYER].leader && Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader))
 	//	return false;
 
@@ -1070,7 +1070,7 @@ Trigger.prototype.spawnDruid = function(data)
 	
 	var chosen_spawn_entity = this.GetTriggerPoints("D")[0];
 	if (!chosen_spawn_entity)
-		warn("No trigger point D: " + chosen_spawn_entity);
+		this.debug("No trigger point D: " + chosen_spawn_entity);
 	var druid = {"template": "units/gaul_hero_miraculous", "count": 1};
 	this.playerData[DEFENDER_PLAYER].druid = TriggerHelper.SpawnUnits(chosen_spawn_entity, druid.template, druid.count, DEFENDER_PLAYER)[0];
 
@@ -1202,7 +1202,7 @@ Trigger.prototype.spawn_initial = function(entities_to_spawn, playerId, spawn_lo
 		}
 		else 
 		{
-			warn("Neither building to be spawned at was defined nor any trigger point " + uneval(spawn_location_entities) + " could be found within the Gallic village. => Skipping: " + uneval(unit_to_spawn));
+			this.debug("Neither building to be spawned at was defined nor any trigger point " + uneval(spawn_location_entities) + " could be found within the Gallic village. => Skipping: " + uneval(unit_to_spawn));
 			continue ;
 		}
 		
@@ -1242,7 +1242,7 @@ Trigger.prototype.spawn_initial_enemy = function()
 	// centurio:
 	var ent = this.spawn_new_enemy_centurio(); 
 	this.playerData[INTRUDER_PLAYER].initial_units.push(ent);
-	warn("Spawning centurio: " + this.playerData[INTRUDER_PLAYER].leader);
+	this.debug("Spawning centurio: " + this.playerData[INTRUDER_PLAYER].leader);
 
 	var cmpUnitAI = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitAI);
 //	cmpUnitAI.PushOrderFront(
@@ -1294,7 +1294,7 @@ Trigger.prototype.spawn_new_enemy_centurio = function()
 	var fortress_trigger_point = cmpTrigger.GetTriggerPoints("F")[0]; 
 	if (!fortress_trigger_point)
 	{
-		warn("No trigger point (F) that defines the location of the Roman fortress (construction place and Roman command base).");
+		this.debug("No trigger point (F) that defines the location of the Roman fortress (construction place and Roman command base).");
 		return entities[0];
 	}
 	for each (var ent in entities)
@@ -1319,7 +1319,7 @@ Trigger.prototype.SpawnEnemyAndAttack = function(data)
 	var spawned_units_count = 0; 
 	var spawned_units = [];
 	var spawn_points = [this.GetTriggerPoints("F"), this.GetTriggerPoints("G"), this.GetTriggerPoints("D"), this.GetTriggerPoints("I"), this.GetTriggerPoints("J")];
-	warn('Spawning ' + this.enemy_attack_unit_count + ' units.');
+	this.debug('Spawning ' + this.enemy_attack_unit_count + ' units.');
 	while (spawned_units_count < this.enemy_attack_unit_count)
 	{
 		var where = pickRandomly(spawn_points);
@@ -1664,7 +1664,7 @@ Trigger.prototype.random_phoenician_trader_visit = function()
 	var possible_spawn_points = this.GetTriggerPoints("C");
 	if (!possible_spawn_points)
 	{
-		warn('No trigger points C for spawning the phoenician trader.');
+		this.debug('No trigger points C for spawning the phoenician trader.');
 		return false;
 	}
 	
@@ -1861,7 +1861,7 @@ function grant_one_time_druid_reinforcements()
 cmpTrigger.major_enemy_attack_probability = .1;
 function lessen_major_enemy_attack_probability()
 {
-	warn('decrease major enemy attack probability');
+	this.debug('decrease major enemy attack probability');
 	if (cmpTrigger.major_enemy_attack_probability > .019)
 	{
 		var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger);
@@ -1872,7 +1872,7 @@ function lessen_major_enemy_attack_probability()
 
 function increase_major_enemy_attack_probability()
 {
-	warn('increase major enemy attack probability');
+	this.debug('increase major enemy attack probability');
 	if (cmpTrigger.major_enemy_attack_probability < .9999)
 	{
 		var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger);
@@ -1906,7 +1906,7 @@ Trigger.prototype.random_launch_major_enemy_assault = function(data)
 	var road_trigger_points = cmpTrigger.GetTriggerPoints("I"); 
 	if (!road_trigger_points)
 	{
-		warn("No trigger points (I) that define each road that can be taken towards the Gallic village.");
+		this.debug("No trigger points (I) that define each road that can be taken towards the Gallic village.");
 		return ;
 	}
 	
