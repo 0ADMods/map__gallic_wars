@@ -360,9 +360,11 @@ Trigger.prototype.enterConditions["druid_is_rescued"] = function(cmpTrigger)
 
 Trigger.prototype.enterConditions["turn_the_tide"] = function(cmpTrigger)
 {
-	cmpTrigger.debug('leader: ' + cmpTrigger.playerData[INTRUDER_PLAYER].leader + ' isAlive: ' + Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader));
 	//if (cmpTrigger.playerData[INTRUDER_PLAYER] && cmpTrigger.playerData[INTRUDER_PLAYER].leader && Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader))
+	//{
+		//cmpTrigger.debug('leader: ' + cmpTrigger.playerData[INTRUDER_PLAYER].leader + ' isAlive: ' + Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader));
 	//	return false;
+	//}
 
 	var cmpRangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
 	
@@ -1557,7 +1559,7 @@ Trigger.prototype.react_if_enemy_leader_is_gone = function()
 Trigger.prototype.random_enemy_centurio_excursion = function()
 {
 	// abort chance 90 %
-	if (random_abort(.33))
+	if (random_abort(.90))
 		return ;
 	
 	
@@ -1635,10 +1637,10 @@ Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy = function
 		{
 			;
 			var target_points = [this.GetTriggerPoints("I"), this.GetTriggerPoints("F")];
-			var target = pickRandomly(targetPoints);
-			target = pickRandomly(targetPoints);
+			var target_point = pickRandomly(target_points);
+			target = pickRandomly(target);
 			var cmpUnitAi = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitAI);
-			var cmpPosition = Engine.QueryInterface(target, IID_Position);
+			var cmpPosition = Engine.QueryInterface(target_point, IID_Position);
 			var pos = cmpPosition.GetPosition();
 			cmpUnitAi.WalkToPointRange(pos.x, pos.z, 0, 10, true);
 		}
