@@ -1075,19 +1075,48 @@ Trigger.prototype.spawnDruid = function(data)
 		this.debug("No trigger point D: " + chosen_spawn_entity);
 	var druid = {"template": "units/gaul_hero_miraculous", "count": 1};
 	this.playerData[DEFENDER_PLAYER].druid = TriggerHelper.SpawnUnits(chosen_spawn_entity, druid.template, druid.count, DEFENDER_PLAYER)[0];
-
-	var trigger_point_in_gallic_village = this.GetTriggerPoints("K");
-	var cmpUnitAI = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].druid, IID_UnitAI);
-	var cmpPosition = Engine.QueryInterface(trigger_point_in_gallic_village, IID_Position);
-	var pos = cmpPosition.GetPosition();
-	if(cmpUnitAI)
-		cmpUnitAI.WalkToPointRange(pos.x, pos.z, 0, 20, true);
-	//var cmpUnitMotion = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].druid, IID_UnitMotion);
-	//cmpUnitMotion.MoveToTargetRange(trigger_point_in_gallic_village, 0, 20);
-	
 	//this.isAlreadyAchieved["druide_is_rescued"] = true;
 	this.DisableTrigger("OnRange", "spawnDruid");
 
+	var cmpUnitAi = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].druid, IID_UnitAI);
+	
+	var harbour = this.GetTriggerPoints("B")[0];
+	var cmpPosition = Engine.QueryInterface(harbour, IID_Position);
+	var pos = cmpPosition.GetPosition();
+	
+	var cmpUnitAi = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].druid, IID_UnitAI);
+	if(cmpUnitAi)
+		cmpUnitAi.WalkToPointRange(pos.x, pos.z, 0, 10, true);
+		
+
+	var d = {};
+	d = {
+		"entities": [harbour],
+		"players": [DEFENDER_PLAYER],
+		"maxRange": 15, // when the centurio comes in sight of the building. TODO Derive from the target entity's template?
+		"requiredComponent": IID_UnitAI,
+		"enabled": true
+	}
+	this.RegisterTrigger("OnRange", "give_druid_further_instructions_on_harbour_arrival", d);
+
+	return true;
+}
+	
+
+Trigger.prototype.give_druid_further_instructions_on_harbour_arrival = function()
+{
+	var trigger_point_in_gallic_village = this.GetTriggerPoints("K")[0];
+	var cmpPosition = Engine.QueryInterface(trigger_point_in_gallic_village, IID_Position);
+	var pos = cmpPosition.GetPosition();
+	
+	var cmpUnitAi = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].druid, IID_UnitAI);
+	if(cmpUnitAi)
+		cmpUnitAi.WalkToPointRange(pos.x, pos.z, 0, 20, true);
+	
+	//var cmpUnitMotion = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].druid, IID_UnitMotion);
+	//cmpUnitMotion.MoveToTargetRange(trigger_point_in_gallic_village, 0, 20);
+	
+	this.DisableTrigger("OnRange", "give_druid_further_instructions_on_harbour_arrival");
 	return true;
 }
 
@@ -1607,7 +1636,7 @@ function getNearbyEnemiesWithComponent(source, range_min, range_max, component)
 
 Trigger.prototype.give_counter_strike_recommendation = function()
 {
-	if (random_abort(.75))
+	if (random_abort(99))
 		return ;
 			
 	// analyze current situation on the battle fields:
@@ -1652,13 +1681,13 @@ Trigger.prototype.give_counter_strike_recommendation = function()
 Trigger.prototype.random_phoenician_trader_visit = function()
 {
 	// A trader passes by seldomly:
-	var probability_of_trader_passing_by_closely = .01;
-	if (random_abort(1.0 - probability_of_trader_passing_by_closely))
+	var probability_of_trader_passing_by_closely = .1;
+	if (random_abort(100 - probability_of_trader_passing_by_closely))
 		return false;
 	
 	// The trader doesn't want to enter the harbour if fighting is close. (give the player a motivation to keep the harbour area clear of fighting to increase the probability that the trader will come by.)
 	var range_min = 0; 
-	var range_max = 300; // keep  300m around the harbour free from fighting.
+	var range_max = 100; // keep  100m around the harbour free from fighting.
 	var entities_nearby = getNearbyEnemies(this.GetTriggerPoints("B")[0], range_min, range_max);
 	
 	var enemy_entities = [];
