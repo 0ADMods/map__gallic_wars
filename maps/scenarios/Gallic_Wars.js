@@ -152,7 +152,7 @@ Trigger.prototype.messages["wipe_out_enemy"] = function()
 {
 	PushGUINotification(
 		[DEFENDER_PLAYER], 
-		"We have to deal with all nearby enemy fortifications and to start throwing the Romans out of Gaul."
+		"We have to deal with all nearby enemy fortifications and start throwing the Romans out of Gaul."
 	);
 	
 }
@@ -372,7 +372,7 @@ Trigger.prototype.enterConditions["turn_the_tide"] = function(cmpTrigger)
 	var enemy_entities = cmpRangeMan.GetEntitiesByPlayer(INTRUDER_PLAYER);
 	var enemy_units = enemy_entities.filter(function(e) { if (Engine.QueryInterface(e, IID_UnitAI)) return true; return false; });
 
-	if (units.length < 10 * enemy_units.length)
+	if (units.length < 2 * enemy_units.length)
 		return false;
 
 	// Count active enemy attacks. If there are any active attacks, then no counter attack can be ordered.
@@ -444,12 +444,15 @@ Trigger.prototype.enterConditions["turning_the_tide_failed"] = function(cmpTrigg
 Trigger.prototype.enterConditions["tide_is_turned"] = function(cmpTrigger)
 {
 	// Note: This only works because the Romans never construct buildings. Examine all entities and filter out the buildings instead to get a general solution.
-	if (cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings)
+	if (cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings
+		&& cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings.length)
 		for each (var b in cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings)
 			if (b)
 			{
 				var cmpHealth = Engine.QueryInterface(b, IID_Health);
-				if (cmpHealth && cmpHealth.GetHitpoints() > 0)
+				var cmpPosition = Engine.QueryInterface(b, IID_Position);
+				if (cmpPosition && cmpPosition.GetPosition().x !== -1
+						&& cmpHealth && cmpHealth.GetHitpoints() > 0)
 					return false; // not yet destroyed all
 			}
 	// okay, we have destroyed all enemy buildings => we have not failed. => don't enter this state
@@ -1426,8 +1429,11 @@ Trigger.prototype.SpawnEnemyAndAttack = function(data)
 			//cmpUnitAi.PushOrderFront("Attack", {"target": target, "force": false});
 			var cmpPosition = Engine.QueryInterface(target, IID_Position);
 			var pos = cmpPosition.GetPosition2D();
-			cmpUnitAi.WalkToPointRange(pos.x, pos.y/*z*/, 0, 20, true);
-			//cmpUnitMotion.MoveToTargetRange(target, 0, 20);
+	        var cmpIdentity = Engine.QueryInterface(ent, IID_Identity);
+			if (!cmpIdentity.HasClass("Siege"))
+				cmpUnitAi.WalkToPointRange(pos.x, pos.y/*z*/, 0, 20, true);
+			else
+				cmpUnitMotion.MoveToTargetRange(target, 0, 20);
 			continue;
 		}
 		//else 
@@ -1522,8 +1528,8 @@ Trigger.prototype.react_if_enemy_leader_is_gone = function()
 
 Trigger.prototype.random_enemy_centurio_excursion = function()
 {
-	// abort chance 10 %
-	if (random_abort(.1))
+	// abort chance 90 %
+	if (random_abort(.9))
 		return ;
 	
 	this.all_roman_centurios_so_far_ids = []; // ids to be serializable.
@@ -1682,13 +1688,13 @@ Trigger.prototype.give_counter_strike_recommendation = function()
 Trigger.prototype.random_phoenician_trader_visit = function()
 {
 	// A trader passes by seldomly:
-	var probability_of_trader_passing_by_closely = .1;
+	var probability_of_trader_passing_by_closely = .01;
 	if (random_abort(100 - probability_of_trader_passing_by_closely))
 		return false;
 	
 	// The trader doesn't want to enter the harbour if fighting is close. (give the player a motivation to keep the harbour area clear of fighting to increase the probability that the trader will come by.)
 	var range_min = 0; 
-	var range_max = 100; // keep  100m around the harbour free from fighting.
+	var range_max = 80; // keep  100m around the harbour free from fighting.
 	var entities_nearby = getNearbyEnemies(this.GetTriggerPoints("B")[0], range_min, range_max);
 	
 	var enemy_entities = [];
