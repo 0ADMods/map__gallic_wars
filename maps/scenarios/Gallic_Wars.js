@@ -506,6 +506,7 @@ Trigger.prototype.intro = function(data)
 	});
 
 //	this.PushGUINotification([DEFENDER_PLAYER, INTRUDER_PLAYER],
+	cmpGUIInterface = Engine.QueryInterface(SYSTEM_ENTITY, IID_GuiInterface);
 	cmpGUIInterface.PushNotification({
 		"players": [DEFENDER_PLAYER], 
 		"parameters": {"animalKind": "Boars"},
@@ -1077,8 +1078,8 @@ Trigger.prototype.spawnDruid = function(data)
 
 	var trigger_point_in_gallic_village = this.GetTriggerPoints("K");
 	var cmpUnitAI = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].druid, IID_UnitAI);
-	var cmpPosition = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].druid, IID_Position);
-	var pos = cmpPosition.GetPosition2D();
+	var cmpPosition = Engine.QueryInterface(trigger_point_in_gallic_village, IID_Position);
+	var pos = cmpPosition.GetPosition();
 	if(cmpUnitAI)
 		cmpUnitAI.WalkToPointRange(pos.x, pos.z, 0, 20, true);
 	//var cmpUnitMotion = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].druid, IID_UnitMotion);
@@ -1300,9 +1301,10 @@ Trigger.prototype.spawn_new_enemy_centurio = function()
 	if (!entities || !entities.length)
 		return undefined;
 	this.playerData[INTRUDER_PLAYER].leader = entities[0];
-	var cmpIdentiy = Engine.QueryInterface(entities[0], IID_Identity);
+	var cmpIdentity = Engine.QueryInterface(entities[0], IID_Identity);
 	this.playerData[INTRUDER_PLAYER].leader_identity = cmpIdentity;
-	this.debug("A new centurio arrived: " + this.playerData[INTRUDER_PLAYER].leader);	
+	this.debug("A new centurio arrived: " + this.playerData[INTRUDER_PLAYER].leader);
+	PushGUINotification([DEFENDER_PLAYER], "Spy: 'Julius Caesar has sent a Centurio to conquer our village.'");
 	var fortress_trigger_point = cmpTrigger.GetTriggerPoints("F")[0]; 
 	if (!fortress_trigger_point)
 	{
@@ -1315,8 +1317,12 @@ Trigger.prototype.spawn_new_enemy_centurio = function()
 		//cmpUnitAI.PushOrderFront(
 		//	"WalkToTargetRange", { "target": fortress_trigger_point, "min": 0, "max": 20 }
 		//);
-		var cmpUnitMotion = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitMotion);
-		cmpUnitMotion.MoveToTargetRange(fortress_trigger_point, 0, 20);
+		var cmpPosition = Engine.QueryInterface(fortress_trigger_point, IID_Position);
+		var pos = cmpPosition.GetPosition2D();
+		if (cmpUnitAI)
+			cmpUnitAI.WalkToPointRange(pos.x, pos.y/*z*/, 0, 20, true);
+		//var cmpUnitMotion = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitMotion);
+		//cmpUnitMotion.MoveToTargetRange(fortress_trigger_point, 0, 20);
 	}
 	// reactivate this achievement:
 	this.isAlreadyAchieved["react_if_enemy_leader_is_gone"] = false;
@@ -1388,12 +1394,19 @@ Trigger.prototype.SpawnEnemyAndAttack = function(data)
 				}
 			
 			//cmpUnitAi.PushOrderFront("Attack", {"target": target, "force": false});
-			cmpUnitMotion.MoveToTargetRange(target, 0, 20);
+			var cmpPosition = Engine.QueryInterface(target, IID_Position);
+			var pos = cmpPosition.GetPosition2D();
+			cmpUnitAi.WalkToPointRange(pos.x, pos.y/*z*/, 0, 20, true);
+			//cmpUnitMotion.MoveToTargetRange(target, 0, 20);
 			continue;
 		}
+		//else 
 		var trigger_points_in_gallic_village = this.GetTriggerPoints("K");
 		var chosen_target = pickRandomly(trigger_points_in_gallic_village);
-		cmpUnitMotion.MoveToTargetRange(chosen_target, 0, 20);
+		var cmpPosition = Engine.QueryInterface(chosen_target, IID_Position);
+		var pos = cmpPosition.GetPosition();
+		cmpUnitAi.WalkToPointRange(pos.x, pos.z, 0, 20, true);
+		//cmpUnitMotion.MoveToTargetRange(chosen_target, 0, 20);
 	}
 }
 
@@ -1495,8 +1508,11 @@ Trigger.prototype.random_enemy_centurio_excursion = function()
 	//cmpUnitAI.PushOrderFront(
 	//	"WalkToTargetRange", { "target": chosen_target, "min": 0, "max": 150 }
 	//);
-	var cmpUnitMotion = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitMotion);
-	cmpUnitMotion.MoveToTargetRange(chosen_target, 0, 150);
+	var cmpPosition = Engine.QueryInterface(chosen_target, IID_Position);
+	var pos = cmpPosition.GetPosition();
+	cmpUnitAI.WalkToPointRange(pos.x, pos.z, 0, 150, true);
+	//var cmpUnitMotion = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitMotion); <-- doesn't set proper unit ai state and hence no correct animation is chosen.
+	//cmpUnitMotion.MoveToTargetRange(chosen_target, 0, 150);
 
 	// Setup trigger for further orders when the entity reached the target position:
 	var d = {};
@@ -1696,11 +1712,11 @@ Trigger.prototype.random_phoenician_trader_visit = function()
 
 	var cmpUnitAI = Engine.QueryInterface(trader, IID_UnitAI);
 	var harbour = this.GetTriggerPoints("B")[0];
-	var cmpUnitMotion = Engine.QueryInterface(trader, IID_UnitMotion);
-	cmpUnitMotion.MoveToTargetRange(harbour, 0, 10);
-		//PushOrderFront(
-	//	"MoveToTargetRange", { "target": this.GetTriggerPoints("B")[0], "min": 0, "max": 40 }
-	//);
+	var cmpPosition = Engine.QueryInterface(harbour, IID_Position);
+	var pos = cmpPosition.GetPosition2D();
+	cmpUnitAI.WalkToPointRange(pos.x, pos.y/*z*/, 0, 10, true);
+	//var cmpUnitMotion = Engine.QueryInterface(trader, IID_UnitMotion);
+	//cmpUnitMotion.MoveToTargetRange(harbour, 0, 10);
 	if (this.traders_on_their_way.indexOf(trader) == -1)
 		this.traders_on_their_way.push(trader);
 	
@@ -1745,8 +1761,16 @@ Trigger.prototype.HarbourArrival = function(data)
 	
 		// move the ship back to where it came from or to a random trigger point on the sea:
 		var target_point = pickRandomly(ship_spawn_entities);
-		var cmpUnitMotion = Engine.QueryInterface(ent, IID_UnitMotion);
-		cmpUnitMotion.MoveToTargetRange(target_point, 0, 15);
+		var cmpPosition = Engine.QueryInterface(target_point, IID_Position);
+		var pos = cmpPosition.GetPosition();
+		var cmpUnitAi = Engine.QueryInterface(ent, IID_UnitAI);
+		if (cmpUnitAi)
+			cmpUnitAi.WalkToPointRange(pos.x, pos.z, 0, 15, true);
+		else 
+		{
+			var cmpUnitMotion = Engine.QueryInterface(ent, IID_UnitMotion);
+			cmpUnitMotion.MoveToTargetRange(target_point, 0, 15);
+		}
 		
 		// mark for disappearance:
 		if (this.disappearOrderQueue.indexOf(ent) === -1)
@@ -1933,12 +1957,15 @@ Trigger.prototype.random_launch_major_enemy_assault = function(data)
 			continue;
 		
 		var chosen_target = pickRandomly(road_trigger_points);
-		cmpUnitAi.PushOrderFront(
-			"WalkToTargetRange", { "target": chosen_target, "min": 0, "max": 15 }
-		);
+		//cmpUnitAi.PushOrderFront(
+		//	"WalkToTargetRange", { "target": chosen_target, "min": 0, "max": 15 }
+		//);
 		
-		var cmpUnitMotion = Engine.QueryInterface(ent, IID_UnitMotion);
-		cmpUnitMotion.MoveToTargetRange(chosen_target, 0, 15);
+		var cmpPosition = Engine.QueryInterface(chosen_target, IID_Position);
+		var pos = cmpPosition.GetPosition();
+		cmpUnitAi.WalkToPointRange(pos.x, pos.z, 0, 15, true);
+		//var cmpUnitMotion = Engine.QueryInterface(ent, IID_UnitMotion);
+		//cmpUnitMotion.MoveToTargetRange(chosen_target, 0, 15);
 		
 		if (cmpTrigger.major_enemy_attack_attacking_entities.indexOf(ent) === -1)
 			cmpTrigger.major_enemy_attack_entities_on_the_way.push(ent); 
@@ -1979,8 +2006,11 @@ Trigger.prototype.if_attacking_entities_arrived_at_road_waypoint_then_give_furth
 		cmpUnitAI.PushOrderFront(
 			"WalkToTargetRange", { "target": chosen_target, "min": 0, "max": 20 }
 		);
-		var cmpUnitMotion = Engine.QueryInterface(ent, IID_UnitMotion);
-		cmpUnitMotion.MoveToTargetRange(chosen_target, 0, 20);
+		var cmpPosition = Engine.QueryInterface(harbour, IID_Position);
+		var pos = cmpPosition.GetPosition();
+		cmpUnitAI.WalkToPointRange(pos.x, pos.z, 0, 20, true);
+		//var cmpUnitMotion = Engine.QueryInterface(ent, IID_UnitMotion);
+		//cmpUnitMotion.MoveToTargetRange(chosen_target, 0, 20);
 
 
 		if (this.major_enemy_attack_attacking_entities.indexOf(ent) === -1)
@@ -2017,6 +2047,8 @@ Trigger.prototype.if_attacking_entities_arrived_at_siege_point_then_give_further
 			continue;
 		
 		var cmpUnitAi = Engine.QueryInterface(ent, IID_UnitAI);
+		if (!cmpUnitAi)
+			continue;
 		if (!cmpUnitAi.TargetIsAlive(ent))
 			continue;
 		
@@ -2042,8 +2074,7 @@ Trigger.prototype.if_attacking_entities_arrived_at_siege_point_then_give_further
 
 	    var cmpEnemyOfRomanPosition = Engine.QueryInterface(target, IID_Position);
     	var pos = cmpEnemyOfRomanPosition.GetPosition();
-		var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
-		cmpUnitAI.PushOrderFront("WalkAndFight", { "x": pos.x, "z": pos.z, "target": target, "force": false });
+		cmpUnitAi.PushOrderFront("WalkAndFight", { "x": pos.x, "z": pos.z, "target": target, "force": false });
 	}
 }
 	
