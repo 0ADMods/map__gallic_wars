@@ -1300,6 +1300,8 @@ Trigger.prototype.spawn_new_enemy_centurio = function()
 	if (!entities || !entities.length)
 		return undefined;
 	this.playerData[INTRUDER_PLAYER].leader = entities[0];
+	var cmpIdentiy = Engine.QueryInterface(entities[0], IID_Identity);
+	this.playerData[INTRUDER_PLAYER].leader_identity = cmpIdentity;
 	this.debug("A new centurio arrived: " + this.playerData[INTRUDER_PLAYER].leader);	
 	var fortress_trigger_point = cmpTrigger.GetTriggerPoints("F")[0]; 
 	if (!fortress_trigger_point)
@@ -1468,7 +1470,7 @@ Trigger.prototype.react_if_enemy_leader_is_gone = function()
 			if (!cmpHealth || cmpHealth.GetHitpoints() < 1)
 			{
 				var cmpIdentity = Engine.QueryInterface(leader, IID_Identity);
-				PushGUINotification([DEFENDER_PLAYER], "The Enemy leader " + cmpIdentity.GetGenericName() + " has been captured or killed.");
+				PushGUINotification([DEFENDER_PLAYER], "The Enemy leader " + this.playerData[INTRUDER_PLAYER].leader_identity.GetGenericName() + " has been captured or killed.");
 				this.isAlreadyAchieved["react_if_enemy_leader_is_gone"] = true;
 			}
 	}
