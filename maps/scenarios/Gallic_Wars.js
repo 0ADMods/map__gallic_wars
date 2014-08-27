@@ -1075,6 +1075,15 @@ Trigger.prototype.spawnDruid = function(data)
 	var druid = {"template": "units/gaul_hero_miraculous", "count": 1};
 	this.playerData[DEFENDER_PLAYER].druid = TriggerHelper.SpawnUnits(chosen_spawn_entity, druid.template, druid.count, DEFENDER_PLAYER)[0];
 
+	var trigger_point_in_gallic_village = this.GetTriggerPoints("K");
+	var cmpUnitAI = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].druid, IID_UnitAI);
+	var cmpPosition = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].druid, IID_Position);
+	var pos = cmpPosition.GetPosition2D();
+	if(cmpUnitAI)
+		cmpUnitAI.WalkToPointRange(pos.x, pos.z, 0, 20, true);
+	//var cmpUnitMotion = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].druid, IID_UnitMotion);
+	//cmpUnitMotion.MoveToTargetRange(trigger_point_in_gallic_village, 0, 20);
+	
 	//this.isAlreadyAchieved["druide_is_rescued"] = true;
 	this.DisableTrigger("OnRange", "spawnDruid");
 
@@ -1319,7 +1328,7 @@ Trigger.prototype.SpawnEnemyAndAttack = function(data)
 	// spawn armies.
 	var spawned_units_count = 0; 
 	var spawned_units = [];
-	var spawn_points = [this.GetTriggerPoints("F"), this.GetTriggerPoints("G"), this.GetTriggerPoints("D"), this.GetTriggerPoints("I"), this.GetTriggerPoints("J")];
+	var spawn_points = [this.GetTriggerPoints("F"), this.GetTriggerPoints("G"), this.GetTriggerPoints("D"), this.GetTriggerPoints("I")];
 	this.debug('Spawning ' + this.enemy_attack_unit_count + ' units.');
 	while (spawned_units_count < this.enemy_attack_unit_count)
 	{
@@ -1886,7 +1895,7 @@ Trigger.prototype.increase_major_enemy_attack_probability = function()
 Trigger.prototype.grant_gallic_neighbours_reinforcements = function()
 {
 	// TODO improve
-	grant_one_time_druid_reinforcements();
+	this.grant_one_time_druid_reinforcements();
 }
 
 
