@@ -245,7 +245,7 @@ Trigger.prototype.leaveConditions["construction_phase"] = function(cmpTrigger)
 	}
 	if (now() > cmpTrigger.construction_phase_timeout_starttime + cmpTrigger.CONSTRUCTION_PHASE_TIMEOUT)
 	{
-		PushGUINotification([DEFENDER_PLAYER], "Spy: 'The enemy is more numerous than us. They are amassing near the village. We must finish our fortifications.");
+		PushGUINotification([DEFENDER_PLAYER], "Spy: 'Our time is running out. Are our fortifications in good shape?'");
 		return true;
 	}
 	return false;
@@ -857,7 +857,7 @@ Trigger.prototype.SKIP_STATE_CYCLING_NOTIFICATION_AMOUNT = 10;
 cmpTrigger.skipped_state_cycling_notification_count = 0;
 Trigger.prototype.CONSTRUCTION_PHASE_BUILDING_COUNT_TO_CONSTRUCT = 10;
 Trigger.prototype.CONSTRUCTION_PHASE_TRESHOLD_ENEMY_NUMEROUS = 50;
-Trigger.prototype.CONSTRUCTION_PHASE_TIMEOUT = 2 * 60 * SECOND; // 2min
+Trigger.prototype.CONSTRUCTION_PHASE_TIMEOUT = 3 * 60 * SECOND; // 2min
 
 
 
@@ -1607,6 +1607,9 @@ function getNearbyEnemiesWithComponent(source, range_min, range_max, component)
 
 Trigger.prototype.give_counter_strike_recommendation = function()
 {
+	if (random_abort(.75))
+		return ;
+			
 	// analyze current situation on the battle fields:
 	// count enemies nearby village:
 	var enemies_nearby_village_count = 0;
