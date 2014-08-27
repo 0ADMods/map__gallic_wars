@@ -745,11 +745,12 @@ cmpTrigger.RegisterTrigger("OnTreasureCollected", "TreasureCollected", data);
 
 
 // SpawnEnemyAndAttack steering data: (maybe changed during/by the storyline)
-cmpTrigger.enemy_attack_interval = 3 * 60 * SECOND; // every 3 minute
-cmpTrigger.ENEMY_ATTACK_INTERVAL_MIN = 2 * SECOND; // every 10 minutes
-cmpTrigger.ENEMY_ATTACK_INTERVAL_MAX = 10 * 60 * SECOND; // every 10 minutes
-cmpTrigger.ENEMY_ATTACK_INTERVAL_STEP = 10 * SECOND; // increase or decrease by 10 seconds
-cmpTrigger.enemy_attack_unit_count = 10; 
+cmpTrigger.enemy_attack_interval = 60 * SECOND; // every 1 minute
+cmpTrigger.ENEMY_ATTACK_INTERVAL_MIN = 1 * SECOND;
+cmpTrigger.ENEMY_ATTACK_INTERVAL_MAX = 3 * 60 * SECOND; // every 3 minutes
+cmpTrigger.ENEMY_ATTACK_INTERVAL_STEP = 1 * SECOND; // increase or decrease by 10 seconds
+cmpTrigger.enemy_attack_unit_count = 30;
+cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MIN = 10;
 cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MAX = 1000; 
 cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_STEP = 1;
    
@@ -795,8 +796,8 @@ cmpTrigger.compositions = [
 		{"template": "units/{Civ}_infantry_swordsman_a", "count": cmpTrigger.getRandomUnitCount()}, 
 		{"template": "units/{Civ}_infantry_javelinist_a", "count": cmpTrigger.getRandomUnitCount()}, 
 		{"template": "units/{Civ}_infantry_spearman_a", "count": cmpTrigger.getRandomUnitCount()}, 
-		{"template": "units/{Civ}_support_healer_b", "count": cmpTrigger.getRandomUnitCount()}, 
-		{"template": "units/{Civ}_support_healer_a", "count": cmpTrigger.getRandomUnitCount()}, 
+		{"template": "units/{Civ}_support_healer_b", "count": Math.round(cmpTrigger.getRandomUnitCount() / 3, 0)}, 
+		{"template": "units/{Civ}_support_healer_a", "count": Math.round(cmpTrigger.getRandomUnitCount() / 5, 0)}, 
 	],
 	[
 		{"template": "units/{Civ}_cavalry_spearman_e", "count": cmpTrigger.getRandomUnitCount()}, 
@@ -812,10 +813,10 @@ cmpTrigger.compositions = [
 		{"template": "units/{Civ}_mechanical_siege_ram", "count": Math.round(cmpTrigger.getRandomUnitCount() / 3, 0)}, 
 		{"template": "units/{Civ}_mechanical_siege_ballista_unpacked", "count": Math.round(cmpTrigger.getRandomUnitCount() / 3, 0)}, 
 		{"template": "units/{Civ}_mechanical_siege_scorpio_unpacked", "count": Math.round(cmpTrigger.getRandomUnitCount() / 3, 0)}, 
-		{"template": "units/rome_legionnaire_imperial", "count": cmpTrigger.getRandomUnitCount()}, 
+		{"template": "units/rome_legionnaire_imperial", "count": cmpTrigger.getRandomUnitCount() * 2}, 
 		{"template": "units/{Civ}_champion_infantry", "count": cmpTrigger.getRandomUnitCount()}, 
 		{"template": "units/{Civ}_champion_cavalry", "count": cmpTrigger.getRandomUnitCount()}, 
-		{"template": "units/{Civ}_support_healer_e", "count": cmpTrigger.getRandomUnitCount()}, 
+		{"template": "units/{Civ}_support_healer_e", "count": Math.round(cmpTrigger.getRandomUnitCount() / 3, 0)}, 
 	]
 	
 ];
@@ -1111,7 +1112,7 @@ Trigger.prototype.give_druid_further_instructions_on_harbour_arrival = function(
 	
 	var cmpUnitAi = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].druid, IID_UnitAI);
 	if(cmpUnitAi)
-		cmpUnitAi.WalkToPointRange(pos.x, pos.z, 0, 20, true);
+		cmpUnitAi.WalkToPointRange(pos.x, pos.z, 0, 1, true);
 	
 	//var cmpUnitMotion = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].druid, IID_UnitMotion);
 	//cmpUnitMotion.MoveToTargetRange(trigger_point_in_gallic_village, 0, 20);
@@ -1486,7 +1487,7 @@ Trigger.prototype.make_enemy_attacks_stronger = function()
 Trigger.prototype.make_enemy_attacks_weaker = function()
 {
 	var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger);
-	if (cmpTrigger.enemy_attack_unit_count > 0 + cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_STEP)
+	if (cmpTrigger.enemy_attack_unit_count > cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MIN + cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_STEP)
 		cmpTrigger.enemy_attack_unit_count -= cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_STEP;
 
 }
