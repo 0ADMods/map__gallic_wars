@@ -37,17 +37,17 @@ var SECOND = 1000;
 
 Trigger.prototype.storyline = {};
 Trigger.prototype.storyline[DEFENDER_PLAYER] = {
-	"global": ["random_phoenician_trader_visit"], // <-- executed in every state.
+	"global": ["random_phoenician_trader_visit", "random_launch_major_enemy_assault"], // <-- executed in every state.
 		
 	"init": ["start"], // <-- "tutorial"
 	"start": ["spawn_initial_gauls", "spawn_initial_neutral", "spawn_initial_enemy", "intro", "construction_phase"], // <-- can be an action/function or a state. If it's a state, then the state's entry conditions are checked and the state entered if the conditions are met.
 	"construction_phase": ["set_construction_phase_timeout_starttime_if_undefined", "random_amass_enemy", "defend_village_selector"],
 	"defend_village_selector": ["defend_village_against_increasing_force", "defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties", "defend_village_against_decreasing_force", "defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties", "village_is_fallen", "react_if_enemy_leader_is_gone"],// TODO move enable interval_trigger_ ... to the common defend_village_selector and add function call that increases enemy strength.
 	"village_is_fallen": ["terminate_doom_of_gaul"],
-	"defend_village_against_increasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "druid_is_rescued", "druid_is_dead", "random_enemy_centurio_excursion", "random_launch_major_enemy_assault", "give_counter_strike_recommendation", "turn_the_tide", "make_enemy_attacks_more_frequent", "make_enemy_attacks_stronger", "defend_village_selector"],
+	"defend_village_against_increasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "druid_is_rescued", "druid_is_dead", "random_enemy_centurio_excursion",  "give_counter_strike_recommendation", "turn_the_tide", "make_enemy_attacks_more_frequent", "make_enemy_attacks_stronger", "defend_village_selector"],
 	"druid_is_rescued": ["grant_one_time_druid_reinforcements", "lessen_major_enemy_attack_probability", "make_enemy_attacks_weaker", "defend_village_selector"],
 	"druid_is_dead": ["grant_one_time_druid_reinforcements", "increase_major_enemy_attack_probability", "make_enemy_attacks_stronger", "defend_village_selector"],
-	"defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties": ["enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "random_launch_major_enemy_assault", "random_enemy_centurio_excursion", "give_counter_strike_recommendation", "turn_the_tide", "make_enemy_attacks_more_frequent", "make_enemy_attacks_stronger", "druid_is_dead", "defend_village_selector"/*must be the last item to avoid the danger of an endless loop if no state can be reached before we over and over reenter defend_village_xy!*/],
+	"defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties": ["enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "random_enemy_centurio_excursion", "give_counter_strike_recommendation", "turn_the_tide", "make_enemy_attacks_more_frequent", "make_enemy_attacks_stronger", "druid_is_dead", "defend_village_selector"/*must be the last item to avoid the danger of an endless loop if no state can be reached before we over and over reenter defend_village_xy!*/],
 	
 	"turn_the_tide": ["disable_interval_trigger_that_launches_enemy_attacks", "destroy_enemy_encampment_within_time"],
 	"destroy_enemy_encampment_within_time": ["turning_the_tide_failed", "tide_is_turned"],
@@ -55,7 +55,7 @@ Trigger.prototype.storyline[DEFENDER_PLAYER] = {
 	"turning_the_tide_failed": ["defend_village_selector"], // <-- extra state to easily allow to print a message once and switch back to the correct defend village state (depending on if the enemy centurio is still alive/ a new one already arrived and if the druid has already been rescued and is still alive)
 	
  	// once the enemy centurio was killed or captured, we enter:
-	"defend_village_against_decreasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "random_launch_major_enemy_assault", "enemy_centurio_excursion", "give_counter_strike_recommendation", "turn_the_tide", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "defend_village_selector"],
+	"defend_village_against_decreasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "enemy_centurio_excursion", "give_counter_strike_recommendation", "turn_the_tide", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "defend_village_selector"],
 	"defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties": [ "enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "give_counter_strike_recommendation", "lessen_major_enemy_attack_probability", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "turn_the_tide", "defend_village_selector"],
 
 	"hurry_back_to_defend_village": ["defend_village_against_increasing", "defend_village"],
@@ -1751,7 +1751,7 @@ Trigger.prototype.give_counter_strike_recommendation = function()
 	if (gauls_nearby_village_count > enemies_nearby_village_count)
 		PushGUINotification([DEFENDER_PLAYER], "Spies: 'Chieftain, we should launch an excursion! We are of equal strength or stronger in numbers than the enemy we counted around our village.'");
 	else if (gauls_nearby_village_count <= enemies_nearby_village_count)
-		PushGUINotification([DEFENDER_PLAYER], "Spies: 'We should bolster our defences! The enemy is numerous near our village.");
+		PushGUINotification([DEFENDER_PLAYER], "Spies: 'We should bolster our defences! The enemy is numerous near our village.'");
 	
 }
 
