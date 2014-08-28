@@ -37,7 +37,7 @@ var SECOND = 1000;
 
 Trigger.prototype.storyline = {};
 Trigger.prototype.storyline[DEFENDER_PLAYER] = {
-	"global": ["random_phoenician_trader_visit", "random_launch_major_enemy_assault"], // <-- executed in every state.
+	"global": ["random_phoenician_trader_visit", "random_launch_major_enemy_assault", "village_is_fallen"], // <-- executed in every state.
 		
 	"init": ["start"], // <-- "tutorial"
 	"start": ["spawn_initial_gauls", "spawn_initial_neutral", "spawn_initial_enemy", "intro", "construction_phase"], // <-- can be an action/function or a state. If it's a state, then the state's entry conditions are checked and the state entered if the conditions are met.
@@ -59,8 +59,8 @@ Trigger.prototype.storyline[DEFENDER_PLAYER] = {
 	"defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties": [ "enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "give_counter_strike_recommendation", "lessen_major_enemy_attack_probability", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "turn_the_tide", "defend_village_selector"],
 
 	"hurry_back_to_defend_village": ["defend_village_against_increasing", "defend_village"],
-	"wipe_out_enemy": ["less_than_x_population_count", "victory_defender"],
-	"less_than_x_population_count": ["enemy_turns_the_tide"],
+	"wipe_out_enemy": ["random_romans_last_effort", "victory_defender"],
+	"random_romans_last_effort": ["enemy_turns_the_tide"],
 	"enemy_turns_the_tide": ["spawn_new_enemy_centurio", "new_enemy_centurio_arrived"],
 	"new_enemy_centurio_arrived": ["launch_major_enemy_assault", "defend_village_selector"]
 
@@ -274,6 +274,22 @@ Trigger.prototype.enterConditions["village_is_fallen"] = function(cmpTrigger)
 	
 }
 
+Trigger.prototype.enterConditions["random_romans_last_effort"] = function(cmpTrigger)
+{
+
+	var cmpRangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
+	var entities = cmpRangeMan.GetEntitiesByPlayer(DEFENDER_PLAYER);
+	var enemies = cmpRangeMan.GetEntitiesByPlayer(INTRUDER_PLAYER);
+	if (entities.length < 40 || enemies.length > 30)
+		return true;
+			
+	if (random_abort(33))
+		return false;
+
+	return true;
+
+}
+
 // DEFEND VILLAGE SELECTOR CONDITIONS (interacting and dependent on each other. Note: only one at a time must be reachable!)
 Trigger.prototype.enterConditions["defend_village_against_increasing_force"] = function(cmpTrigger)
 {
@@ -375,7 +391,7 @@ Trigger.prototype.enterConditions["turn_the_tide"] = function(cmpTrigger)
 	var enemy_entities = cmpRangeMan.GetEntitiesByPlayer(INTRUDER_PLAYER);
 	var enemy_units = enemy_entities.filter(function(e) { if (Engine.QueryInterface(e, IID_UnitAI)) return true; return false; });
 	cmpTrigger.debug('Not turn the tide? own: '+ units.length + ' < 2 * enemy_units.length: ' + enemy_units.length);
-	if (units.length < 2 * enemy_units.length)
+	if (units.length < enemy_units.length)
 		return false;
 
 	// Count active enemy attacks. If there are any active attacks, then no counter attack can be ordered.
@@ -442,12 +458,12 @@ Trigger.prototype.enterConditions["turning_the_tide_failed"] = function(cmpTrigg
 					&& cmpHealth && cmpHealth.GetHitpoints() > 0)
 				{
 					++count;
-					if (count > 9)
+					if (count > cmpTrigger.ENEMY_STRUCTURES_UNDESTROYABLE_COUNT - 1)
 						return true; // not yet destroyed all
 				}
 			}
 	// okay, we have destroyed all enemy buildings => we have not failed. => don't enter this state
-	if (count < 10) 
+	if (count < cmpTrigger.ENEMY_STRUCTURES_UNDESTROYABLE_COUNT) 
 		return false;
 	else 
 		return true;
@@ -457,6 +473,7 @@ Trigger.prototype.enterConditions["turning_the_tide_failed"] = function(cmpTrigg
 Trigger.prototype.enterConditions["tide_is_turned"] = function(cmpTrigger)
 {
 	// Note: This only works because the Romans never construct buildings. Examine all entities and filter out the buildings instead to get a general solution.
+	var count = 0; 
 	if (cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings
 		&& cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings.length)
 		for each (var b in cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings)
@@ -468,12 +485,12 @@ Trigger.prototype.enterConditions["tide_is_turned"] = function(cmpTrigger)
 						&& cmpHealth && cmpHealth.GetHitpoints() > 0)
 				{
 					++count;
-					if (count > 9)
+					if (count > cmpTrigger.ENEMY_STRUCTURES_UNDESTROYABLE_COUNT - 1)
 						return false; // not yet destroyed all
 				}
 			}
 	// okay, we have destroyed all enemy buildings => we have not failed. => don't enter this state
-	if (count < 10) 
+	if (count < cmpTrigger.ENEMY_STRUCTURES_UNDESTROYABLE_COUNT) 
 		return true;
 	else 
 		return false;
@@ -784,7 +801,9 @@ cmpTrigger.enemy_attack_unit_count = 2;
 cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MIN = 1;
 cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MAX = 100; 
 cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_STEP = 1;
-   
+
+cmpTrigger.ENEMY_STRUCTURES_UNDESTROYABLE_COUNT = 15;
+
 cmpTrigger.all_roman_centurios_so_far_ids = []; // ids to be serializable.
 
 cmpTrigger.construction_phase_timeout_starttime = now();
@@ -2019,7 +2038,7 @@ Trigger.prototype.grant_one_time_druid_reinforcements = function()
 	var druid_trigger_point = cmpTrigger.GetTriggerPoints("D")[0];
 
 	var count = Math.round(10 * Math.random(), 0);
-	TriggerHelper.SpawnUnits(druid_trigger_point, "units/gaul_infantry_javelinist_a", count, DEFENDER_PLAYER); 
+	TriggerHelper.SpawnUnits(druid_trigger_point, "units/gaul_infantry_javelinist_a", Math.max(1, count), DEFENDER_PLAYER); 
 	
 	// TODO more diversity! 
 	PushGUINotification([DEFENDER_PLAYER], "Druid: 'My friends! Please welcome these " + count + " Gallic neighbours!'"); 
