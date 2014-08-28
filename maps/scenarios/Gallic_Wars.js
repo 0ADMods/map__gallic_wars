@@ -431,16 +431,26 @@ Trigger.prototype.enterConditions["turning_the_tide_failed"] = function(cmpTrigg
 	}
 	//else time has run out: we might have failed.
 	// Note: This only works because the Romans never construct buildings. Examine all entities and filter out the buildings instead to get a general solution.
+	var count = 0; 
 	if (cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings)
 		for each (var b in cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings)
 			if (b)
 			{
 				var cmpHealth = Engine.QueryInterface(b, IID_Health);
-				if (cmpHealth && cmpHealth.GetHitpoints() > 0)
-					return true; // not yet destroyed all
+				var cmpPosition = Engine.QueryInterface(b, IID_Position);
+				if (cmpPosition && cmpPosition.GetPosition().x !== -1
+					&& cmpHealth && cmpHealth.GetHitpoints() > 0)
+				{
+					++count;
+					if (count > 9)
+						return true; // not yet destroyed all
+				}
 			}
 	// okay, we have destroyed all enemy buildings => we have not failed. => don't enter this state
-	return false;
+	if (count < 10) 
+		return false;
+	else 
+		return true;
 }
 
 
@@ -456,10 +466,17 @@ Trigger.prototype.enterConditions["tide_is_turned"] = function(cmpTrigger)
 				var cmpPosition = Engine.QueryInterface(b, IID_Position);
 				if (cmpPosition && cmpPosition.GetPosition().x !== -1
 						&& cmpHealth && cmpHealth.GetHitpoints() > 0)
-					return false; // not yet destroyed all
+				{
+					++count;
+					if (count > 9)
+						return false; // not yet destroyed all
+				}
 			}
 	// okay, we have destroyed all enemy buildings => we have not failed. => don't enter this state
-	return true;
+	if (count < 10) 
+		return true;
+	else 
+		return false;
 }
 
 //======================================================================================
@@ -2014,10 +2031,9 @@ cmpTrigger.major_enemy_attack_probability = .1;
 Trigger.prototype.lessen_major_enemy_attack_probability = function()
 {
 	this.debug('decrease major enemy attack probability');
-	if (cmpTrigger.major_enemy_attack_probability > .019)
+	if (this.major_enemy_attack_probability > .019)
 	{
-		var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger);
-		cmpTrigger.major_enemy_attack_probability -= .01;
+		this.major_enemy_attack_probability -= .01;
 	}
 	
 }
@@ -2025,10 +2041,9 @@ Trigger.prototype.lessen_major_enemy_attack_probability = function()
 Trigger.prototype.increase_major_enemy_attack_probability = function()
 {
 	this.debug('increase major enemy attack probability');
-	if (cmpTrigger.major_enemy_attack_probability < .9999)
+	if (this.major_enemy_attack_probability < .9999)
 	{
-		var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger);
-		cmpTrigger.major_enemy_attack_probability += .01;
+		this.major_enemy_attack_probability += .01;
 	}
 	
 }
