@@ -33,8 +33,8 @@
 		</Postproc>
 	</Environment>
 	<Camera>
-		<Position x="423.372" y="111.093" z="361.878"/>
-		<Rotation angle="0"/>
+		<Position x="268.814" y="102.383" z="-2.17006"/>
+		<Rotation angle="0.292862"/>
 		<Declination angle="0.610865"/>
 	</Camera>
 	<ScriptSettings><![CDATA[
@@ -20162,6 +20162,66 @@
 			<Position x="365.4485" z="265.72864"/>
 			<Orientation y="2.35621"/>
 			<Actor seed="26496"/>
+		</Entity>
+		<Entity uid="3937">
+			<Template>actor|props/flora/bush_medit_underbrush.xml</Template>
+			<Position x="556.19117" z="454.37787"/>
+			<Orientation y="-2.66565"/>
+			<Actor seed="4710"/>
+		</Entity>
+		<Entity uid="3938">
+			<Template>actor|props/flora/bush_medit_underbrush.xml</Template>
+			<Position x="559.76508" z="447.32401"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="44976"/>
+		</Entity>
+		<Entity uid="3939">
+			<Template>actor|props/flora/bush_medit_underbrush.xml</Template>
+			<Position x="574.79645" z="453.73435"/>
+			<Orientation y="-3.05988"/>
+			<Actor seed="9136"/>
+		</Entity>
+		<Entity uid="3940">
+			<Template>actor|props/flora/bush_tempe_underbrush.xml</Template>
+			<Position x="569.55616" z="447.30979"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="22196"/>
+		</Entity>
+		<Entity uid="3941">
+			<Template>actor|props/flora/bush_tempe_underbrush.xml</Template>
+			<Position x="562.54676" z="438.15964"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="64686"/>
+		</Entity>
+		<Entity uid="3944">
+			<Template>actor|props/flora/bush_tempe_underbrush.xml</Template>
+			<Position x="726.62586" z="411.16816"/>
+			<Orientation y="0.06768"/>
+			<Actor seed="63720"/>
+		</Entity>
+		<Entity uid="3945">
+			<Template>actor|props/flora/bush_tempe_underbrush.xml</Template>
+			<Position x="729.35468" z="419.13526"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="59644"/>
+		</Entity>
+		<Entity uid="3946">
+			<Template>actor|props/flora/bush_tempe_underbrush.xml</Template>
+			<Position x="739.11945" z="424.14118"/>
+			<Orientation y="-0.1129"/>
+			<Actor seed="44442"/>
+		</Entity>
+		<Entity uid="3951">
+			<Template>actor|props/flora/bush_medit_sm_lush.xml</Template>
+			<Position x="737.01435" z="418.0286"/>
+			<Orientation y="2.35621"/>
+			<Actor seed="61654"/>
+		</Entity>
+		<Entity uid="3952">
+			<Template>actor|props/flora/bush_medit_sm_lush.xml</Template>
+			<Position x="725.63971" z="415.10517"/>
+			<Orientation y="-0.12595"/>
+			<Actor seed="51478"/>
 		</Entity>
 	</Entities>
 	<Paths/>
