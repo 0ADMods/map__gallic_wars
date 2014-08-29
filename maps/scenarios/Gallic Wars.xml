@@ -33,7 +33,7 @@
 		</Postproc>
 	</Environment>
 	<Camera>
-		<Position x="423.372" y="111.093" z="361.878"/>
+		<Position x="360.271" y="145.198" z="285.584"/>
 		<Rotation angle="0"/>
 		<Declination angle="0.610865"/>
 	</Camera>
@@ -64,6 +64,7 @@
       }
     },
     {
+      "AI": "JansTMAI",
       "Civ": "rome",
       "Colour": {
         "b": 20,
@@ -85,12 +86,12 @@
     },
     {}
   ],
+  "Preview": "gallic_wars_sunset.jpg",
+  "RevealMap": false,
   "TriggerScripts": [
     "scripts/TriggerHelper.js",
     "scenarios/Gallic_Wars.js"
-  ],
-  "Preview": "gallic_wars_sunset.jpg",
-  "RevealMap": false
+  ]
 }
 ]]></ScriptSettings>
 	<Entities>

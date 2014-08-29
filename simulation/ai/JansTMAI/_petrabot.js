@@ -1,6 +1,6 @@
 Engine.IncludeModule("common-api");
 
-var PETRA = (function() {
+var JansTMAI = (function() {
 var m = {};
 
 // "local" global variables for stuffs that will need a unique ID
