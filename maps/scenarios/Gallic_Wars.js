@@ -37,16 +37,17 @@ var SECOND = 1000;
 
 Trigger.prototype.storyline = {};
 Trigger.prototype.storyline[DEFENDER_PLAYER] = {
-
+	"global": ["random_phoenician_trader_visit", "random_launch_major_enemy_assault", "village_is_fallen"], // <-- executed in every state.
+		
 	"init": ["start"], // <-- "tutorial"
 	"start": ["spawn_initial_gauls", "spawn_initial_neutral", "spawn_initial_enemy", "intro", "construction_phase"], // <-- can be an action/function or a state. If it's a state, then the state's entry conditions are checked and the state entered if the conditions are met.
 	"construction_phase": ["set_construction_phase_timeout_starttime_if_undefined", "random_amass_enemy", "defend_village_selector"],
 	"defend_village_selector": ["defend_village_against_increasing_force", "defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties", "defend_village_against_decreasing_force", "defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties", "village_is_fallen", "react_if_enemy_leader_is_gone"],// TODO move enable interval_trigger_ ... to the common defend_village_selector and add function call that increases enemy strength.
 	"village_is_fallen": ["terminate_doom_of_gaul"],
-	"defend_village_against_increasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "druid_is_rescued", "druid_is_dead", "random_enemy_centurio_excursion", "random_launch_major_enemy_assault", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_more_frequent", "make_enemy_attacks_stronger", "defend_village_selector"],
+	"defend_village_against_increasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "druid_is_rescued", "druid_is_dead", "random_enemy_centurio_excursion",  "give_counter_strike_recommendation", "turn_the_tide", "make_enemy_attacks_more_frequent", "make_enemy_attacks_stronger", "defend_village_selector"],
 	"druid_is_rescued": ["grant_one_time_druid_reinforcements", "lessen_major_enemy_attack_probability", "make_enemy_attacks_weaker", "defend_village_selector"],
 	"druid_is_dead": ["grant_one_time_druid_reinforcements", "increase_major_enemy_attack_probability", "make_enemy_attacks_stronger", "defend_village_selector"],
-	"defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties": ["enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "random_launch_major_enemy_assault", "random_enemy_centurio_excursion", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_more_frequent", "make_enemy_attacks_stronger", "druid_is_dead", "defend_village_selector"/*must be the last item to avoid the danger of an endless loop if no state can be reached before we over and over reenter defend_village_xy!*/],
+	"defend_village_against_increasing_force_gallic_reinforcements_due_to_druid_ties": ["enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "random_enemy_centurio_excursion", "give_counter_strike_recommendation", "turn_the_tide", "make_enemy_attacks_more_frequent", "make_enemy_attacks_stronger", "druid_is_dead", "defend_village_selector"/*must be the last item to avoid the danger of an endless loop if no state can be reached before we over and over reenter defend_village_xy!*/],
 	
 	"turn_the_tide": ["disable_interval_trigger_that_launches_enemy_attacks", "destroy_enemy_encampment_within_time"],
 	"destroy_enemy_encampment_within_time": ["turning_the_tide_failed", "tide_is_turned"],
@@ -54,12 +55,12 @@ Trigger.prototype.storyline[DEFENDER_PLAYER] = {
 	"turning_the_tide_failed": ["defend_village_selector"], // <-- extra state to easily allow to print a message once and switch back to the correct defend village state (depending on if the enemy centurio is still alive/ a new one already arrived and if the druid has already been rescued and is still alive)
 	
  	// once the enemy centurio was killed or captured, we enter:
-	"defend_village_against_decreasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "random_launch_major_enemy_assault", "enemy_centurio_excursion", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "turn_the_tide", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "defend_village_selector"],
-	"defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties": [ "enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "give_counter_strike_recommendation", "random_phoenician_trader_visit", "lessen_major_enemy_attack_probability", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "turn_the_tide", "defend_village_selector"],
+	"defend_village_against_decreasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "enemy_centurio_excursion", "give_counter_strike_recommendation", "turn_the_tide", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "defend_village_selector"],
+	"defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties": [ "enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "give_counter_strike_recommendation", "lessen_major_enemy_attack_probability", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "turn_the_tide", "defend_village_selector"],
 
 	"hurry_back_to_defend_village": ["defend_village_against_increasing", "defend_village"],
-	"wipe_out_enemy": ["less_than_x_population_count", "victory"],
-	"less_than_x_population_count": ["enemy_turns_the_tide"],
+	"wipe_out_enemy": ["random_romans_last_effort", "victory_defender"],
+	"random_romans_last_effort": ["enemy_turns_the_tide"],
 	"enemy_turns_the_tide": ["spawn_new_enemy_centurio", "new_enemy_centurio_arrived"],
 	"new_enemy_centurio_arrived": ["launch_major_enemy_assault", "defend_village_selector"]
 
@@ -152,7 +153,7 @@ Trigger.prototype.messages["wipe_out_enemy"] = function()
 {
 	PushGUINotification(
 		[DEFENDER_PLAYER], 
-		"We have to deal with all nearby enemy fortifications and to start throwing the Romans out of Gaul."
+		"We have to deal with all nearby enemy fortifications and start throwing the Romans out of Gaul."
 	);
 	
 }
@@ -238,9 +239,9 @@ Trigger.prototype.leaveConditions["construction_phase"] = function(cmpTrigger)
 
 	if (cmpTrigger.isAlreadyAchieved["construction_phase"] && cmpTrigger.isAlreadyAchieved["construction_phase"] === true)
 		return true;
-	if (enemy_units.length > units.length /*cmpTrigger.CONSTRUCTION_PHASE_TRESHOLD_ENEMY_NUMEROUS*/)
+	if (enemy_units.length > 1.5 * units.length /*cmpTrigger.CONSTRUCTION_PHASE_TRESHOLD_ENEMY_NUMEROUS*/)
 	{
-		PushGUINotification([DEFENDER_PLAYER], "Spy: 'The enemy is more numerous than us. They are amassing near the village. We must finish our fortifications.'");
+		PushGUINotification([DEFENDER_PLAYER], "Spy: 'The enemy is numerous. They are amassing near the village. We must finish our fortifications.'");
 		return true;
 	}
 	if (now() > cmpTrigger.construction_phase_timeout_starttime + cmpTrigger.CONSTRUCTION_PHASE_TIMEOUT)
@@ -271,6 +272,22 @@ Trigger.prototype.enterConditions["village_is_fallen"] = function(cmpTrigger)
 
 	return true;
 	
+}
+
+Trigger.prototype.enterConditions["random_romans_last_effort"] = function(cmpTrigger)
+{
+
+	var cmpRangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
+	var entities = cmpRangeMan.GetEntitiesByPlayer(DEFENDER_PLAYER);
+	var enemies = cmpRangeMan.GetEntitiesByPlayer(INTRUDER_PLAYER);
+	if (entities.length < 40 || enemies.length > 30)
+		return true;
+			
+	if (random_abort(33))
+		return false;
+
+	return true;
+
 }
 
 // DEFEND VILLAGE SELECTOR CONDITIONS (interacting and dependent on each other. Note: only one at a time must be reachable!)
@@ -314,8 +331,8 @@ function are_criteria_for_increasing_force_met(cmpTrigger)
 		return false;
 	
 	var cmpUnitAI = Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI);
-//	if (!cmpUnitAI || !cmpUnitAI.TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader))
-//		return false;
+	if (!cmpUnitAI || !cmpUnitAI.TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader))
+		return false;
 
 	return true;
 }
@@ -359,9 +376,11 @@ Trigger.prototype.enterConditions["druid_is_rescued"] = function(cmpTrigger)
 
 Trigger.prototype.enterConditions["turn_the_tide"] = function(cmpTrigger)
 {
-	cmpTrigger.debug('leader: ' + cmpTrigger.playerData[INTRUDER_PLAYER].leader + ' isAlive: ' + Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader));
 	//if (cmpTrigger.playerData[INTRUDER_PLAYER] && cmpTrigger.playerData[INTRUDER_PLAYER].leader && Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader))
+	//{
+		//cmpTrigger.debug('leader: ' + cmpTrigger.playerData[INTRUDER_PLAYER].leader + ' isAlive: ' + Engine.QueryInterface(cmpTrigger.playerData[INTRUDER_PLAYER].leader, IID_UnitAI).TargetIsAlive(cmpTrigger.playerData[INTRUDER_PLAYER].leader));
 	//	return false;
+	//}
 
 	var cmpRangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
 	
@@ -371,8 +390,8 @@ Trigger.prototype.enterConditions["turn_the_tide"] = function(cmpTrigger)
 		
 	var enemy_entities = cmpRangeMan.GetEntitiesByPlayer(INTRUDER_PLAYER);
 	var enemy_units = enemy_entities.filter(function(e) { if (Engine.QueryInterface(e, IID_UnitAI)) return true; return false; });
-
-	if (units.length < 10 * enemy_units.length)
+	cmpTrigger.debug('Not turn the tide? own: '+ units.length + ' < 2 * enemy_units.length: ' + enemy_units.length);
+	if (units.length < enemy_units.length)
 		return false;
 
 	// Count active enemy attacks. If there are any active attacks, then no counter attack can be ordered.
@@ -428,32 +447,53 @@ Trigger.prototype.enterConditions["turning_the_tide_failed"] = function(cmpTrigg
 	}
 	//else time has run out: we might have failed.
 	// Note: This only works because the Romans never construct buildings. Examine all entities and filter out the buildings instead to get a general solution.
+	var count = 0; 
 	if (cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings)
 		for each (var b in cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings)
 			if (b)
 			{
 				var cmpHealth = Engine.QueryInterface(b, IID_Health);
-				if (cmpHealth && cmpHealth.GetHitpoints() > 0)
-					return true; // not yet destroyed all
+				var cmpPosition = Engine.QueryInterface(b, IID_Position);
+				if (cmpPosition && cmpPosition.GetPosition().x !== -1
+					&& cmpHealth && cmpHealth.GetHitpoints() > 0)
+				{
+					++count;
+					if (count > cmpTrigger.ENEMY_STRUCTURES_UNDESTROYABLE_COUNT - 1)
+						return true; // not yet destroyed all
+				}
 			}
 	// okay, we have destroyed all enemy buildings => we have not failed. => don't enter this state
-	return false;
+	if (count < cmpTrigger.ENEMY_STRUCTURES_UNDESTROYABLE_COUNT) 
+		return false;
+	else 
+		return true;
 }
 
 
 Trigger.prototype.enterConditions["tide_is_turned"] = function(cmpTrigger)
 {
 	// Note: This only works because the Romans never construct buildings. Examine all entities and filter out the buildings instead to get a general solution.
-	if (cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings)
+	var count = 0; 
+	if (cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings
+		&& cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings.length)
 		for each (var b in cmpTrigger.playerData[INTRUDER_PLAYER].initial_buildings)
 			if (b)
 			{
 				var cmpHealth = Engine.QueryInterface(b, IID_Health);
-				if (cmpHealth && cmpHealth.GetHitpoints() > 0)
-					return false; // not yet destroyed all
+				var cmpPosition = Engine.QueryInterface(b, IID_Position);
+				if (cmpPosition && cmpPosition.GetPosition().x !== -1
+						&& cmpHealth && cmpHealth.GetHitpoints() > 0)
+				{
+					++count;
+					if (count > cmpTrigger.ENEMY_STRUCTURES_UNDESTROYABLE_COUNT - 1)
+						return false; // not yet destroyed all
+				}
 			}
 	// okay, we have destroyed all enemy buildings => we have not failed. => don't enter this state
-	return true;
+	if (count < cmpTrigger.ENEMY_STRUCTURES_UNDESTROYABLE_COUNT) 
+		return true;
+	else 
+		return false;
 }
 
 //======================================================================================
@@ -623,7 +663,7 @@ Trigger.prototype.RangeAction = function(data)
 	if ((allied.length + own.length) / enemies.length > this.TRESHOLD_OWN_TO_NEARBY_ENEMY_MIN_RATIO_TO_HAVE_SUCCESSFULLY_DEFENDED)
 	{
 		this.enterConditionsPrevious["turn_the_tide"] = this.enterConditions["turn_the_tide"];
-		this.enterConditions["turn_the_tide"] = true;
+		//TODO not working properly and rather intering (use enterCondition function only. it's enough) this.enterConditions["turn_the_tide"] = true;
 		//this.leaveConditions["defend_village_against_increasing_force"] = true;
 		//this.leaveConditions["defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties"] = true;
 		//this.leaveConditions["defend_village_against_increasing_force"] = true;
@@ -682,6 +722,14 @@ Trigger.prototype.terminate_remi = function(playerIDs)
 		TriggerHelper.SetPlayerWon(playerID);
 		this.is_victorious[playerID] = true;
 	}
+}
+Trigger.prototype.doom_defender = function()
+{
+	this.doom(DEFENDER_PLAYER);
+}
+Trigger.prototype.victory_defender = function()
+{
+	this.victory(DEFENDER_PLAYER);
 }
 Trigger.prototype.victory = function(playerID)
 {
@@ -748,12 +796,16 @@ cmpTrigger.RegisterTrigger("OnTreasureCollected", "TreasureCollected", data);
 cmpTrigger.enemy_attack_interval = 60 * SECOND; // every 1 minute
 cmpTrigger.ENEMY_ATTACK_INTERVAL_MIN = 1 * SECOND;
 cmpTrigger.ENEMY_ATTACK_INTERVAL_MAX = 3 * 60 * SECOND; // every 3 minutes
-cmpTrigger.ENEMY_ATTACK_INTERVAL_STEP = 1 * SECOND; // increase or decrease by 10 seconds
-cmpTrigger.enemy_attack_unit_count = 30;
-cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MIN = 10;
-cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MAX = 1000; 
+cmpTrigger.ENEMY_ATTACK_INTERVAL_STEP = 2 * SECOND; // increase or decrease by 2 seconds
+cmpTrigger.enemy_attack_unit_count = 2;
+cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MIN = 1;
+cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MAX = 100; 
 cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_STEP = 1;
-   
+
+cmpTrigger.ENEMY_STRUCTURES_UNDESTROYABLE_COUNT = 15;
+
+cmpTrigger.all_roman_centurios_so_far_ids = []; // ids to be serializable.
+
 cmpTrigger.construction_phase_timeout_starttime = now();
 
 var composition_very_weak = {"Classes": ["Infantry+Melee+Basic"], "frequency_or_weight": 10};
@@ -796,8 +848,8 @@ cmpTrigger.compositions = [
 		{"template": "units/{Civ}_infantry_swordsman_a", "count": cmpTrigger.getRandomUnitCount()}, 
 		{"template": "units/{Civ}_infantry_javelinist_a", "count": cmpTrigger.getRandomUnitCount()}, 
 		{"template": "units/{Civ}_infantry_spearman_a", "count": cmpTrigger.getRandomUnitCount()}, 
-		{"template": "units/{Civ}_support_healer_b", "count": Math.round(cmpTrigger.getRandomUnitCount() / 3, 0)}, 
-		{"template": "units/{Civ}_support_healer_a", "count": Math.round(cmpTrigger.getRandomUnitCount() / 5, 0)}, 
+		{"template": "units/{Civ}_support_healer_b", "count": Math.round(cmpTrigger.getRandomUnitCount() / 10, 0)}, 
+		{"template": "units/{Civ}_support_healer_a", "count": Math.round(cmpTrigger.getRandomUnitCount() / 10, 0)}, 
 	],
 	[
 		{"template": "units/{Civ}_cavalry_spearman_e", "count": cmpTrigger.getRandomUnitCount()}, 
@@ -811,27 +863,27 @@ cmpTrigger.compositions = [
 	],
 	[
 		{"template": "units/{Civ}_mechanical_siege_ram", "count": Math.round(cmpTrigger.getRandomUnitCount() / 3, 0)}, 
-		{"template": "units/{Civ}_mechanical_siege_ballista_unpacked", "count": Math.round(cmpTrigger.getRandomUnitCount() / 3, 0)}, 
-		{"template": "units/{Civ}_mechanical_siege_scorpio_unpacked", "count": Math.round(cmpTrigger.getRandomUnitCount() / 3, 0)}, 
+		{"template": "units/{Civ}_mechanical_siege_ballista_unpacked", "count": Math.round(cmpTrigger.getRandomUnitCount() / 2, 0)}, 
+		{"template": "units/{Civ}_mechanical_siege_scorpio_unpacked", "count": Math.round(cmpTrigger.getRandomUnitCount() / 2, 0)}, 
 		{"template": "units/rome_legionnaire_imperial", "count": cmpTrigger.getRandomUnitCount() * 2}, 
 		{"template": "units/{Civ}_champion_infantry", "count": cmpTrigger.getRandomUnitCount()}, 
 		{"template": "units/{Civ}_champion_cavalry", "count": cmpTrigger.getRandomUnitCount()}, 
-		{"template": "units/{Civ}_support_healer_e", "count": Math.round(cmpTrigger.getRandomUnitCount() / 3, 0)}, 
+		{"template": "units/{Civ}_support_healer_e", "count": Math.round(cmpTrigger.getRandomUnitCount() / 10, 0)}, 
 	]
 	
 ];
 
 
 
-var entities = cmpTrigger.GetTriggerPoints("A");
+var entities = cmpTrigger.GetTriggerPoints("K");//"A");
 data = {
 	"entities": entities, // central points to calculate the range circles
-	"players": [INTRUDER_PLAYER, DEFENDER_PLAYER], // only count entities of player 1
-	"maxRange": 200,
+	"players": [INTRUDER_PLAYER, DEFENDER_PLAYER],
+	"maxRange": 1500,
 	"requiredComponent": IID_UnitAI, // only count units in range
 	"enabled": true
 };
-cmpTrigger.RegisterTrigger("OnRange", "RangeAction", data);
+//cmpTrigger.RegisterTrigger("OnRange", "RangeAction", data);
 
 var druid_trigger_point = cmpTrigger.GetTriggerPoints("D")[0];
 data = {
@@ -858,7 +910,7 @@ Trigger.prototype.SKIP_STATE_CYCLING_NOTIFICATION_AMOUNT = 10;
 cmpTrigger.skipped_state_cycling_notification_count = 0;
 Trigger.prototype.CONSTRUCTION_PHASE_BUILDING_COUNT_TO_CONSTRUCT = 10;
 Trigger.prototype.CONSTRUCTION_PHASE_TRESHOLD_ENEMY_NUMEROUS = 50;
-Trigger.prototype.CONSTRUCTION_PHASE_TIMEOUT = 3 * 60 * SECOND; // 2min
+Trigger.prototype.CONSTRUCTION_PHASE_TIMEOUT = 3 * 60 * SECOND;
 
 
 
@@ -946,9 +998,12 @@ Trigger.prototype.storylineMachine = function()
 		is_leave_condition_not_met = leaveCondition != undefined 
 						&& (typeof leaveCondition != 'function' && leaveCondition === false  || typeof leaveCondition == 'function' && leaveCondition(this) == false);
 		
-		// Can the next state be entered?
-		var d = {"state": state, "state_options": state_options, "is_leave_condition_not_met": is_leave_condition_not_met}
+		// treat both global events and specific potential state changes and actions:
+		var d = {"state": "global", "is_leave_condition_not_met": is_leave_condition_not_met, "playerId": DEFENDER_PLAYER};
 		var is_story_terminated = this.handle_state(d);
+		// Can the next state be entered?
+		d = {"state": state, "state_options": state_options, "is_leave_condition_not_met": is_leave_condition_not_met, "playerId": DEFENDER_PLAYER};
+		is_story_terminated = this.handle_state(d);
 		//this.DoAfterDelay(state_cycle_delay, "handle_state", d);
 	//}
 	// Bubble back up to the next higher recursion level depth: (i.e. the normal return to a previous state, without termination, i.e. noone is victorious and no remi arranged.)
@@ -956,17 +1011,38 @@ Trigger.prototype.storylineMachine = function()
 }
 
 
+/**
+ * Executes state actions and checks for possible state changes (Note: first possible state change is entered => a frequent error results, when enter and leave conditions are not correct!).
+ * Three options: 1) Give state_options. 2) Give state + playerId. 3) Give both.
+ */
 Trigger.prototype.handle_state = function(data)
 {
-	var state = data.state;
-	var state_options = data.state_options;
-	var is_leave_condition_not_met = data.is_leave_condition_not_met;
+	var playerId = DEFENDER_PLAYER; // default
+	if (data.playerId)
+		playerId = data.playerId;
+	else if (data.player)
+		playerId = player; // TODO is requiring playerId instead of player useful?
 	
+	var state = data.state;
+	
+	var state_options = data.state_options;
+	if (!state_options)
+	{
+		if (!state || playerId === undefined)
+			return false;
+		state_options = this.storyline[playerId][state];
+	}
+	var is_leave_condition_not_met = data.is_leave_condition_not_met;
+	if (is_leave_condition_not_met === undefined)
+		is_leave_condition_not_met = false;
+	// treat both global events and specific potential state changes and actions:
+	//var state_options_pool = [this.storyline[playerId]["global"], state_options];
+	//for each (state_options in state_options_pool)
 	// Can the next state be entered?  
 	for each (var state_or_action in state_options)
 	{
 		// if (typeof state_or_action == 'string')
-		if (this.storyline[DEFENDER_PLAYER][state_or_action] != undefined && this.storyline[DEFENDER_PLAYER][state_or_action].length)
+		if (this.storyline[playerId][state_or_action] != undefined && this.storyline[playerId][state_or_action].length)
 		{
 			// It's a state: 
 			// Only enter the state when the conditions are met:
@@ -983,7 +1059,7 @@ Trigger.prototype.handle_state = function(data)
 				continue; //<-- when using the recursion approach.  
 			}
 			// Common enter condition: Never enter if a state/quest is already achieved/solved: (Trigger set this as achieved.)
-			else if (this.isAlreadyAchieved[DEFENDER_PLAYER] && this.isAlreadyAchieved[DEFENDER_PLAYER][state_or_action])
+			else if (this.isAlreadyAchieved[playerId] && this.isAlreadyAchieved[playerId][state_or_action])
 			{
 				this.debug(state_or_action + " won't be entered because it's already been achieved.");
 				continue ;
@@ -996,16 +1072,16 @@ Trigger.prototype.handle_state = function(data)
 				var message = this.messages[state_or_action];
 				if (message)
 					if (typeof message == 'string') 
-						TriggerHelper.PushGUINotification(DEFENDER_PLAYER, message);
+						TriggerHelper.PushGUINotification(playerId, message);
 					else if (typeof message == 'function')
 						message();
-				var state_options_next_state = this.storyline[DEFENDER_PLAYER][state_or_action];
+				var state_options_next_state = this.storyline[playerId][state_or_action];
 				this.debug('Entering state: ' + state_or_action + ' state_options_next_state: ' + state_options_next_state);
 				this.state = state_or_action;
 				var d = {};
 				if (this.state_cycle_delays && this.state_cycle_delays[state]) // <-- alternatively use the enterCondition() function and check for ingame time elapsed and return false when a certain interval is not maintained.
 					d.interval = +this.state_cycle_delays[state_or_action]; // if undefined then the default grips.
-				this.startStoryline(d);
+				return this.startStoryline(d);
 			}
 			else {
 				if (++this.skipped_state_cycling_notification_count > this.SKIP_STATE_CYCLING_NOTIFICATION_AMOUNT)
@@ -1120,11 +1196,8 @@ Trigger.prototype.give_druid_further_instructions_on_harbour_arrival = function(
 	this.DisableTrigger("OnRange", "give_druid_further_instructions_on_harbour_arrival");
 	return true;
 }
-
-Trigger.prototype.spawn_initial_gauls = function(data)
-{
-	// Spawn buildings and units and add to the default count.
-	var units_to_spawn = [
+Trigger.prototype.units_to_spawn = []; 
+Trigger.prototype.units_to_spawn[DEFENDER_PLAYER] = [
 			{"template": "units/gaul_infantry_javelinist_a", "count": 10}
 			, {"template": "units/gaul_infantry_slinger_a", "count": 10}
 			, {"template": "units/gaul_infantry_spearman_a", "count": 10}
@@ -1136,11 +1209,13 @@ Trigger.prototype.spawn_initial_gauls = function(data)
 
 			, {"template": "units/gaul_idefisk", "count": 1}
 			, {"template": "units/gaul_hero_obelisk", "count": 2}
-
-	];
+]; 
+Trigger.prototype.spawn_initial_gauls = function(data)
+{
+	// Spawn buildings and units and add to the default count.
 	var trigger_points_in_gallic_village = this.GetTriggerPoints("A");
 	
-	this.spawn_initial(units_to_spawn, DEFENDER_PLAYER, trigger_points_in_gallic_village);
+	this.spawn_initial(this.units_to_spawn[DEFENDER_PLAYER], DEFENDER_PLAYER, trigger_points_in_gallic_village);
 	
 
 	// Special units to keep track of individually:
@@ -1150,7 +1225,7 @@ Trigger.prototype.spawn_initial_gauls = function(data)
 
 	// asterisk
 	// both common units for now.
-	units_to_spawn = [
+	var units_to_spawn = [
 			// heroes
 			{"template": "units/gaul_idefisk", "count": 1}
 			, {"template": "units/celt_fat_gaul", "count": 10}
@@ -1188,7 +1263,7 @@ Trigger.prototype.spawn_initial_gauls = function(data)
 	
 }
 
-Trigger.prototype.spawn_initial = function(entities_to_spawn, playerId, spawn_location_entities, allowSpawningFromBuildings = true, alternateTriggerPointAndBuildingSpawning = true, valueModificationsToApplyToExistingBuildingsCache = undefined)
+Trigger.prototype.spawn_initial = function(entities_to_spawn, playerId, spawn_location_entities, allowSpawningFromBuildings = true, alternateTriggerPointAndBuildingSpawning = true, valueModificationsToApplyToExistingBuildingsCache = undefined, civ = undefined)
 {
 	this.playerData[playerId].initial_buildings = [];
 	this.playerData[playerId].initial_units = [];
@@ -1247,7 +1322,10 @@ Trigger.prototype.spawn_initial = function(entities_to_spawn, playerId, spawn_lo
 			continue ;
 		}
 		
-		var spawned_units = TriggerHelper.SpawnUnits(chosen_spawn_entity, unit_to_spawn.template, unit_to_spawn.count, playerId);
+		var template =  unit_to_spawn.template;
+		if (civ)
+			template = template.replace("{Civ}", civ);
+		var spawned_units = TriggerHelper.SpawnUnits(chosen_spawn_entity, template, unit_to_spawn.count, playerId);
 		for each (var spawned_unit in spawned_units)
 			this.playerData[playerId].initial_units.push(spawned_unit);
 
@@ -1260,11 +1338,11 @@ Trigger.prototype.spawn_initial_neutral = function(data)
 }
 
 // Spawn buildings and units and add to the default count.
-Trigger.prototype.units_to_spawn = []; 
+
 Trigger.prototype.units_to_spawn[INTRUDER_PLAYER] = [
-		{"template": "units/rome_infantry_javelinist_b", "count": 10}
-		, {"template": "units/rome_infantry_swordsman_b", "count": 10}
-		, {"template": "units/rome_infantry_spearman_b", "count": 10}
+		{"template": "units/rome_infantry_javelinist_b", "count": 5}
+		, {"template": "units/rome_infantry_swordsman_b", "count": 5}
+		, {"template": "units/rome_infantry_spearman_b", "count": 5}
 
 		// champions
 		, {"template": "units/rome_champion_infantry", "count": 10}
@@ -1278,7 +1356,11 @@ Trigger.prototype.spawn_initial_enemy = function()
 	var trigger_points_in_roman_camp = this.GetTriggerPoints("F");
 	var modificationsToApplyToExistingBuildings = {"TerritoryDecay/HealthDecayRate": 0};
 	this.spawn_initial(this.units_to_spawn[INTRUDER_PLAYER], INTRUDER_PLAYER, trigger_points_in_roman_camp, true, true, modificationsToApplyToExistingBuildings);
-
+	
+	// Defending the spot where the druid is kept:
+	var druid_spot = this.GetTriggerPoints("D")[0];
+	this.spawn_initial(this.compositions[4], INTRUDER_PLAYER, [druid_spot], false, false, undefined, "rome");
+	
 	// Special units to keep track of individually:
 	// centurio:
 	var ent = this.spawn_new_enemy_centurio(); 
@@ -1296,29 +1378,32 @@ Trigger.prototype.spawn_initial_enemy = function()
 
 Trigger.prototype.random_amass_enemy = function(spawn_points)
 {	
+	if (random_abort(66))
+		return ;
 	var trigger_points_in_roman_camp = this.GetTriggerPoints("F");
-	this.spawn(trigger_points_in_roman_camp, this.units_to_spawn[INTRUDER_PLAYER], INTRUDER_PLAYER);
+	var druid_spot = this.GetTriggerPoints("D");
+	var chosen_points = pickRandomly([trigger_points_in_roman_camp, druid_spot, druid_spot]); //<-- defend the druid well
+	this.spawn(chosen_points, this.units_to_spawn[INTRUDER_PLAYER], INTRUDER_PLAYER);
 }
 
-Trigger.prototype.spawn = function(spawn_points, units_to_spawn,playerId)
+Trigger.prototype.spawn = function(spawn_points, units_to_spawn, playerId)
 {
 	if (!spawn_points || !spawn_points.length)
 	{
 		this.debug("Amass Enemy: No spawn points given.");
-		return;
+		return undefined;
 	}
 	var units_spawned = [];
 	for each (var unit_to_spawn in units_to_spawn)
 	{
-		if (random_abort(33))
-			continue;
 		var chosen_spawn_point = pickRandomly(spawn_points);	
-		var ents = TriggerHelper.SpawnUnits(chosen_spawn_point, unit_to_spawn.template, +Math.max(1, Math.round(unit_to_spawn.count * Math.random()* 2, 0)), playerId);
-		if (!ents)
+		var ents = TriggerHelper.SpawnUnits(chosen_spawn_point, unit_to_spawn.template, +Math.max(1, Math.round(unit_to_spawn.count * Math.random(), 0)), playerId);
+		if (!ents || !ents.length)
 			continue;
 		for each (var e in ents)
 			units_spawned.push(e);
 	}
+	return units_spawned;
 }
 
 
@@ -1330,6 +1415,7 @@ Trigger.prototype.spawn_new_enemy_centurio = function()
 	var entities = TriggerHelper.SpawnUnits(western_most_road_trigger_point, ent_data.template, ent_data.count, INTRUDER_PLAYER);
 	if (!entities || !entities.length)
 		return undefined;
+	this.all_roman_centurios_so_far_ids.push(entities[0]);
 	this.playerData[INTRUDER_PLAYER].leader = entities[0];
 	var cmpIdentity = Engine.QueryInterface(entities[0], IID_Identity);
 	this.playerData[INTRUDER_PLAYER].leader_identity = cmpIdentity;
@@ -1366,7 +1452,7 @@ Trigger.prototype.SpawnEnemyAndAttack = function(data)
 	// spawn armies.
 	var spawned_units_count = 0; 
 	var spawned_units = [];
-	var spawn_points = [this.GetTriggerPoints("F"), this.GetTriggerPoints("G"), this.GetTriggerPoints("D"), this.GetTriggerPoints("I")];
+	var spawn_points = [this.GetTriggerPoints("G"), this.GetTriggerPoints("D"), this.GetTriggerPoints("I")];
 	this.debug('Spawning ' + this.enemy_attack_unit_count + ' units.');
 	while (spawned_units_count < this.enemy_attack_unit_count)
 	{
@@ -1376,7 +1462,7 @@ Trigger.prototype.SpawnEnemyAndAttack = function(data)
 		// compose armies.
 		var composition_variant = pickRandomly(this.compositions);
 		var unit_to_spawn = pickRandomly(composition_variant);//.units);
-		var spawned_units_of_same_type = TriggerHelper.SpawnUnits(where, unit_to_spawn.template.replace("{Civ}", "rome"), unit_to_spawn.count, INTRUDER_PLAYER);
+		var spawned_units_of_same_type = TriggerHelper.SpawnUnits(where, unit_to_spawn.template.replace("{Civ}", "rome"), Math.max(1, unit_to_spawn.count), INTRUDER_PLAYER);
 		
 		for each (var spawned_unit in spawned_units_of_same_type)
 		{
@@ -1426,8 +1512,11 @@ Trigger.prototype.SpawnEnemyAndAttack = function(data)
 			//cmpUnitAi.PushOrderFront("Attack", {"target": target, "force": false});
 			var cmpPosition = Engine.QueryInterface(target, IID_Position);
 			var pos = cmpPosition.GetPosition2D();
-			cmpUnitAi.WalkToPointRange(pos.x, pos.y/*z*/, 0, 20, true);
-			//cmpUnitMotion.MoveToTargetRange(target, 0, 20);
+	        var cmpIdentity = Engine.QueryInterface(ent, IID_Identity);
+			if (!cmpIdentity.HasClass("Siege"))
+				cmpUnitAi.WalkToPointRange(pos.x, pos.y/*z*/, 0, 20, true);
+			else
+				cmpUnitMotion.MoveToTargetRange(target, 0, 20);
 			continue;
 		}
 		//else 
@@ -1435,13 +1524,16 @@ Trigger.prototype.SpawnEnemyAndAttack = function(data)
 		var chosen_target = pickRandomly(trigger_points_in_gallic_village);
 		var cmpPosition = Engine.QueryInterface(chosen_target, IID_Position);
 		var pos = cmpPosition.GetPosition();
-		cmpUnitAi.WalkToPointRange(pos.x, pos.z, 0, 20, true);
-		//cmpUnitMotion.MoveToTargetRange(chosen_target, 0, 20);
+		if (!cmpIdentity.HasClass("Siege"))
+			cmpUnitAi.WalkToPointRange(pos.x, pos.z, 0, 20, true);
+		else
+			cmpUnitMotion.MoveToTargetRange(chosen_target, 0, 20);
 	}
 }
 
 Trigger.prototype.enable_interval_trigger_that_launches_enemy_attacks = function(data)
 {
+	this.EnableTrigger("OnInterval", "SpawnEnemyAndAttack");
 	
 	// overwrite potentially already existing trigger (Reregister is required because the trigger interval may have been adapted by the storyline.) TODO Overwriting is not working!
 	data = {};
@@ -1496,8 +1588,7 @@ Trigger.prototype.make_enemy_attacks_weaker = function()
 
 Trigger.prototype.random_make_call_to_rescue_the_druid = function()
 {
-	// abort chance 5 %
-	if (random_abort(5))
+	if (random_abort(75))
 		return ;
 	
 	PushGUINotification([DEFENDER_PLAYER], "We have received a message from our druid: 'My Gallic friends, please increase your efforts to rescue me! I don't know where they brought me, but I can sense it must be in the forrest ... and it smells like if they made a fire.'");
@@ -1522,11 +1613,10 @@ Trigger.prototype.react_if_enemy_leader_is_gone = function()
 
 Trigger.prototype.random_enemy_centurio_excursion = function()
 {
-	// abort chance 10 %
-	if (random_abort(.1))
+	// abort chance 90 %
+	if (random_abort(.90))
 		return ;
 	
-	this.all_roman_centurios_so_far_ids = []; // ids to be serializable.
 	
 	if (!this.playerData[INTRUDER_PLAYER].leader)
 		return ;
@@ -1560,19 +1650,21 @@ Trigger.prototype.random_enemy_centurio_excursion = function()
 
 Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy = function(data)
 {
-	//if (data.triggerPoint != "K" /*&& triggerPointOwner != DEFENDER_PLAYER*/)
-	if (data.added.indexOf(this.playerData[INTRUDER_PLAYER].leader) == -1)
-		return ;
-
 	// No centurio that is alive and in active command?
 	if (!this.playerData[INTRUDER_PLAYER].leader)
 		return ;
-	
+
+	//if (data.triggerPoint != "K" /*&& triggerPointOwner != DEFENDER_PLAYER*/)
 	// The centurio entered the range of the trigger point?
+	if (data.added.indexOf(this.playerData[INTRUDER_PLAYER].leader) === -1)
+		if (data.currentCollection.indexOf(this.playerData[INTRUDER_PLAYER].leader) === -1)
+			return ;
+
+	
 	if (data.added.indexOf(this.playerData[INTRUDER_PLAYER].leader) === -1)
 		return ;
 
-	var range = 128; // TODO: what's a sensible number?
+	var range = 100;
 	var nearby = getNearbyEnemies(this.playerData[INTRUDER_PLAYER].leader, 0, range);
 
 	var target = undefined;
@@ -1584,7 +1676,7 @@ Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy = function
 		var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI); 
 		if (!cmpUnitAI) 
 			continue;
-		// Only attack leaders:
+		// Only attack champions and leaders:
 		if (cmpIdentity.GetClassesList().indexOf("Hero") === -1)
 			continue;
 		target = ent;
@@ -1593,7 +1685,20 @@ Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy = function
 	}
 	if (!target)
 	{
-		PushGUINotification([DEFENDER_PLAYER], "Secret forces: 'The enemy centurio tried to attack one of your heroes but couldn't make for one!'");
+		PushGUINotification([DEFENDER_PLAYER], "Secret forces: 'The enemy centurio tried to attack one of your leaders but couldn't make for one!'");
+		
+		var cmpUnitAi = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitAI); 
+		if (cmpUnitAi) 
+		{
+			;
+			var target_points = [this.GetTriggerPoints("I"), this.GetTriggerPoints("F")];
+			target_points = pickRandomly(target_points);
+			var target_point = pickRandomly(target_points);
+			var cmpUnitAi = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitAI);
+			var cmpPosition = Engine.QueryInterface(target_point, IID_Position);
+			var pos = cmpPosition.GetPosition();
+			cmpUnitAi.WalkToPointRange(pos.x, pos.z, 0, 10, true);
+		}
 		return;
 	}
 	
@@ -1604,6 +1709,7 @@ Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy = function
 	cmpUnitAI.PushOrderFront("WalkAndFight", { "x": pos.x, "z": pos.z, "target": target, "force": false });
 	
 	PushGUINotification([DEFENDER_PLAYER], "Royal guard: 'The Roman Centurio is attacking our hero: " + target_cmpIdentity.GetGenericName() + "!'");
+	
 }
 
 
@@ -1637,7 +1743,7 @@ function getNearbyEnemiesWithComponent(source, range_min, range_max, component)
 
 Trigger.prototype.give_counter_strike_recommendation = function()
 {
-	if (random_abort(99))
+	if (random_abort(80))
 		return ;
 			
 	// analyze current situation on the battle fields:
@@ -1647,12 +1753,16 @@ Trigger.prototype.give_counter_strike_recommendation = function()
 	
 	var range_min = 0; 
 	var range_max = 1000;
-	var entities_nearby = getNearbyEnemies(this.GetTriggerPoints("K")[0], range_min, range_max, IID_UnitAI);
+	
+	var source = this.GetTriggerPoints("K")[0];
+	var component = IID_UnitAI;
+	var rangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
+	var players = [DEFENDER_PLAYER, INTRUDER_PLAYER];
+	var entities_nearby = rangeMan.ExecuteQuery(source, range_min, range_max, players, component); //<-- only those with Identity. (Note: RangeManager seems to be C++ component/entity only.)
 	
 	var enemy_entities = [];
 	for each (var ent in entities_nearby)
 	{
-		// Don't count buildings as they won't repell the trader if there are no mobile units that could capture the ship.
 		var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI); 
 		if (!cmpUnitAI) 
 			continue;
@@ -1664,31 +1774,33 @@ Trigger.prototype.give_counter_strike_recommendation = function()
 			++gauls_nearby_village_count;
 		else
 		{
-			
+			++enemies_nearby_village_count;	
 			// it's an enemy:
 			enemy_entities.push(ent);
 		}
 	}
+
 	
+
 	 
 	// give recommendation.
 	if (gauls_nearby_village_count > enemies_nearby_village_count)
 		PushGUINotification([DEFENDER_PLAYER], "Spies: 'Chieftain, we should launch an excursion! We are of equal strength or stronger in numbers than the enemy we counted around our village.'");
 	else if (gauls_nearby_village_count <= enemies_nearby_village_count)
-		PushGUINotification([DEFENDER_PLAYER], "Spies: 'We should bolster our defences! The enemy is numerous near our village.");
+		PushGUINotification([DEFENDER_PLAYER], "Spies: 'We should bolster our defences! The enemy is numerous near our village.'");
 	
 }
 
 Trigger.prototype.random_phoenician_trader_visit = function()
 {
 	// A trader passes by seldomly:
-	var probability_of_trader_passing_by_closely = .1;
-	if (random_abort(100 - probability_of_trader_passing_by_closely))
+	var probability_of_trader_passing_by_closely = .05;
+	if (random_abort(1 - probability_of_trader_passing_by_closely))
 		return false;
 	
 	// The trader doesn't want to enter the harbour if fighting is close. (give the player a motivation to keep the harbour area clear of fighting to increase the probability that the trader will come by.)
 	var range_min = 0; 
-	var range_max = 100; // keep  100m around the harbour free from fighting.
+	var range_max = 80; // keep  100m around the harbour free from fighting.
 	var entities_nearby = getNearbyEnemies(this.GetTriggerPoints("B")[0], range_min, range_max);
 	
 	var enemy_entities = [];
@@ -1709,7 +1821,7 @@ Trigger.prototype.random_phoenician_trader_visit = function()
 		enemy_entities.push(ent);
 	}
 	
-	var probability_of_trader_entering_harbour = .75;
+	var probability_of_trader_entering_harbour = .70;
 	if (enemy_entities.length > 0)
 	{
 		probability_of_trader_entering_harbour = .01; // => in total it initally was: .01 * .01 = 1/10000 => very seldom
@@ -1874,7 +1986,7 @@ Trigger.prototype.PerformTrade = function(currentHarbour) // <-- every gaul can 
 
 	goods.type = nextGoods;
 	var TRADER_GOOD_AMOUNT_MAX = 10000;
-	goods.amount = {"traderGain": Math.round(Math.random() * TRADER_GOOD_AMOUNT_MAX, 0), "is_willing_to_trade": (Math.random() * 10 > 8)};
+	goods.amount = {"traderGain": Math.round(Math.random() * TRADER_GOOD_AMOUNT_MAX, 0), "is_willing_to_trade": (Math.random() * 100 > 33)};
 	goods.origin = currentHarbour;
 	if (goods.amount && goods.amount.traderGain)
 	{
@@ -1891,12 +2003,16 @@ Trigger.prototype.PerformTrade = function(currentHarbour) // <-- every gaul can 
 				if (cmpIdentity.GetClassesList().indexOf(persuading_class) !== -1)
 				{
 					succeedingEntityClass = persuading_class;
-					PushGUINotification("Trader: 'I did not want to trade with folks like you as the Roman power reaches far, but as you sent a "+ succeedingEntityClass +" as envy I'll make an exception.'");
+					PushGUINotification([DEFENDER_PLAYER], "Trader: 'I did not want to trade with folks like you as the Roman power reaches far, but as you sent a "+ succeedingEntityClass +" as envy I'll make an exception.'");
 					break;
 				}
 			if (!succeedingEntityClass)
+			{
+				PushGUINotification([DEFENDER_PLAYER], "The trader wasn't willing to trade.");
 				return false;
+			}
 		}
+		//PushGUINotification([DEFENDER_PLAYER], "The trader was willing to trade.");
 		
 		if (cmpPlayer)
 			cmpPlayer.AddResource(goods.type, goods.amount.traderGain);
@@ -1914,15 +2030,18 @@ Trigger.prototype.PerformTrade = function(currentHarbour) // <-- every gaul can 
 
 Trigger.prototype.grant_one_time_druid_reinforcements = function()
 {
-	if (random_abort(50))
+	if (random_abort(95))
 		return false;
+
 
 	// TODO Or rather use the druid for the spawn position?
 	var druid_trigger_point = cmpTrigger.GetTriggerPoints("D")[0];
 
-	var count = 10;
-	TriggerHelper.SpawnUnits(druid_trigger_point, "units/gaul_infantry_javelinist_a", count, DEFENDER_PLAYER); 
+	var count = Math.round(10 * Math.random(), 0);
+	TriggerHelper.SpawnUnits(druid_trigger_point, "units/gaul_infantry_javelinist_a", Math.max(1, count), DEFENDER_PLAYER); 
+	
 	// TODO more diversity! 
+	PushGUINotification([DEFENDER_PLAYER], "Druid: 'My friends! Please welcome these " + count + " Gallic neighbours!'"); 
 	return true; 
 }	
 
@@ -1931,10 +2050,9 @@ cmpTrigger.major_enemy_attack_probability = .1;
 Trigger.prototype.lessen_major_enemy_attack_probability = function()
 {
 	this.debug('decrease major enemy attack probability');
-	if (cmpTrigger.major_enemy_attack_probability > .019)
+	if (this.major_enemy_attack_probability > .019)
 	{
-		var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger);
-		cmpTrigger.major_enemy_attack_probability -= .01;
+		this.major_enemy_attack_probability -= .01;
 	}
 	
 }
@@ -1942,10 +2060,9 @@ Trigger.prototype.lessen_major_enemy_attack_probability = function()
 Trigger.prototype.increase_major_enemy_attack_probability = function()
 {
 	this.debug('increase major enemy attack probability');
-	if (cmpTrigger.major_enemy_attack_probability < .9999)
+	if (this.major_enemy_attack_probability < .9999)
 	{
-		var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger);
-		cmpTrigger.major_enemy_attack_probability += .01;
+		this.major_enemy_attack_probability += .01;
 	}
 	
 }
@@ -1966,10 +2083,14 @@ Trigger.prototype.random_launch_major_enemy_assault = function(data)
 	if (random_abort(1 - cmpTrigger.major_enemy_attack_probability))
 		return ;
 	
+	PushGUINotification([DEFENDER_PLAYER], "Spies: 'We have spotted a major enemy assault. Are we lost?'");
+
 	// launch a giant enemy assault.
-	// TODO
 	// 1) spawn strong enemy units for the attack.
 	var entities = [];	
+	
+	var trigger_points_in_roman_camp = this.GetTriggerPoints("F");
+	entities = this.spawn(trigger_points_in_roman_camp, this.units_to_spawn[INTRUDER_PLAYER], INTRUDER_PLAYER);
 
 	// 2) choose random roads (from trigger points I)
 	var road_trigger_points = cmpTrigger.GetTriggerPoints("I"); 
@@ -1979,6 +2100,7 @@ Trigger.prototype.random_launch_major_enemy_assault = function(data)
 		return ;
 	}
 	
+
 	for each (var ent in entities)
 	{
 		// treat only existing and alive units (TODO in world entities only? if garrisoned, then the position is -1).
@@ -2031,15 +2153,14 @@ Trigger.prototype.if_attacking_entities_arrived_at_road_waypoint_then_give_furth
 			continue;
 		
 		var cmpUnitAi = Engine.QueryInterface(ent, IID_UnitAI);
-		if (!cmpUnitAi.TargetIsAlive(ent))
+		if (!cmpUnitAi || !cmpUnitAi.TargetIsAlive(ent))
 			continue;
 		
 		var cmpUnitAI = Engine.QueryInterface(ent, IID_UnitAI);
 		var chosen_target = siege_trigger_points[siege_trigger_point_chosen_index];
-		cmpUnitAI.PushOrderFront(
-			"WalkToTargetRange", { "target": chosen_target, "min": 0, "max": 20 }
-		);
-		var cmpPosition = Engine.QueryInterface(harbour, IID_Position);
+		//var cmpUnitMotion = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitMotion);
+		//cmpUnitMotion.MoveToTargetRange(fortress_trigger_point, 0, 20);
+		var cmpPosition = Engine.QueryInterface(chosen_target, IID_Position);
 		var pos = cmpPosition.GetPosition();
 		cmpUnitAI.WalkToPointRange(pos.x, pos.z, 0, 20, true);
 		//var cmpUnitMotion = Engine.QueryInterface(ent, IID_UnitMotion);
@@ -2085,8 +2206,8 @@ Trigger.prototype.if_attacking_entities_arrived_at_siege_point_then_give_further
 		if (!cmpUnitAi.TargetIsAlive(ent))
 			continue;
 		
-		var range = 128; // TODO: what's a sensible number?
-		var nearby = getNearbyEnemies(this.playerData[INTRUDER_PLAYER].leader, 0, range);
+		var range = 250;
+		var nearby = getNearbyEnemies(ent, 0, range);
 
 		var target = undefined;
 		var target_cmpIdentity = undefined;
@@ -2094,7 +2215,7 @@ Trigger.prototype.if_attacking_entities_arrived_at_siege_point_then_give_further
 		{
 	        var cmpIdentity = Engine.QueryInterface(ent, IID_Identity);
 			// Don't attack possibly captured Romans: (as you might want to re-convert or free them)
-			if (cmpIdentity.GetCiv().indexOf("rom") !== -1)
+			if (!cmpIdentity || cmpIdentity.GetCiv().indexOf("rom") !== -1)
 				continue;
 			target = ent;
 			target_cmpIdentity = cmpIdentity;
@@ -2114,10 +2235,10 @@ Trigger.prototype.if_attacking_entities_arrived_at_siege_point_then_give_further
 	
 
 
-function random_abort(abort_chance_percent_float_or_int, abort_when_greater_than_this)
+function random_abort(abort_chance_percent_float_or_int)
 {
 	var abort_chance_percent_integer = 0;
-	if (Math.round(abort_chance_percent_float_or_int, 0) === abort_chance_percent_float_or_int)
+	if (Math.round(abort_chance_percent_float_or_int, 0) * 100 === abort_chance_percent_float_or_int * 100)
 		// no comma => no float!
 		abort_chance_percent_integer = abort_chance_percent_float_or_int;
 	else
@@ -2125,11 +2246,11 @@ function random_abort(abort_chance_percent_float_or_int, abort_when_greater_than
 	
 	// random decision: (99 because of 0 being included.)
 	var chance = Math.round(Math.random() * 99, 0);
-	
+	//warn('chance: ' + chance + ' < abort_chance_percent_integer: ' + abort_chance_percent_integer + ' ('+abort_chance_percent_float_or_int+')');	
 	// e.g. chance_percent = 70 
 	if (chance < abort_chance_percent_integer)
-		return false;
-	return true;
+		return true;
+	return false;
 }
 
 function pickRandomly(list)

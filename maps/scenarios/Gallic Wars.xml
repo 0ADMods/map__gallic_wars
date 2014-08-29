@@ -33,8 +33,13 @@
 		</Postproc>
 	</Environment>
 	<Camera>
+<<<<<<< HEAD
 		<Position x="268.814" y="102.383" z="-2.17006"/>
 		<Rotation angle="0.292862"/>
+=======
+		<Position x="360.271" y="145.198" z="285.584"/>
+		<Rotation angle="0"/>
+>>>>>>> origin/master
 		<Declination angle="0.610865"/>
 	</Camera>
 	<ScriptSettings><![CDATA[
@@ -64,6 +69,7 @@
       }
     },
     {
+      "AI": "JansTMAI",
       "Civ": "rome",
       "Colour": {
         "b": 20,
@@ -85,12 +91,12 @@
     },
     {}
   ],
+  "Preview": "gallic_wars_sunset.jpg",
+  "RevealMap": false,
   "TriggerScripts": [
     "scripts/TriggerHelper.js",
     "scenarios/Gallic_Wars.js"
-  ],
-  "Preview": "gallic_wars_sunset.jpg",
-  "RevealMap": false
+  ]
 }
 ]]></ScriptSettings>
 	<Entities>
