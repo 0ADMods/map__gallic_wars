@@ -14,7 +14,7 @@
   </Heal>
   <Cost>
     <Population>1</Population>
-    <BuildTime>100</BuildTime>
+    <BuildTime>5000</BuildTime>
     <Resources>
       <food>500</food>
       <metal>250</metal>

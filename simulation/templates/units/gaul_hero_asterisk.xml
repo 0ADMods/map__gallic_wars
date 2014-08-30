@@ -18,9 +18,9 @@
   </Armour>
   <Attack>
     <Melee>
-      <Hack>777.0</Hack>
+      <Hack>7.0</Hack>
       <Pierce>0.0</Pierce>
-      <Crush>0.0</Crush>
+      <Crush>77.0</Crush>
       <MaxRange>4.0</MaxRange>
       <RepeatTime>300</RepeatTime>
 	  <Bonuses>

@@ -18,7 +18,7 @@
   </Armour>
   <Attack>
     <Melee>
-      <Hack>999.0</Hack>
+      <Hack>50.0</Hack>
       <Pierce>0.0</Pierce>
       <Crush>100.0</Crush>
       <MaxRange>10.0</MaxRange>
@@ -40,7 +40,7 @@
     </Melee>
   </Attack>
   <Health>
-    <Max>2000</Max>
+    <Max>2500</Max>
   </Health>
   <Identity>
     <Civ>gaul</Civ>
