@@ -55,7 +55,7 @@ Trigger.prototype.storyline[DEFENDER_PLAYER] = {
 	"turning_the_tide_failed": ["defend_village_selector"], // <-- extra state to easily allow to print a message once and switch back to the correct defend village state (depending on if the enemy centurio is still alive/ a new one already arrived and if the druid has already been rescued and is still alive)
 	
  	// once the enemy centurio was killed or captured, we enter:
-	"defend_village_against_decreasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "enemy_centurio_excursion", "give_counter_strike_recommendation", "turn_the_tide", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "defend_village_selector"],
+	"defend_village_against_decreasing_force": ["enable_interval_trigger_that_launches_enemy_attacks", "random_make_call_to_rescue_the_druid", "random_enemy_centurio_excursion", "give_counter_strike_recommendation", "turn_the_tide", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "defend_village_selector"],
 	"defend_village_against_decreasing_force_gallic_reinforcements_due_to_druid_ties": [ "enable_interval_trigger_that_launches_enemy_attacks", "grant_gallic_neighbours_reinforcements", "give_counter_strike_recommendation", "lessen_major_enemy_attack_probability", "make_enemy_attacks_less_frequent", "make_enemy_attacks_weaker", "turn_the_tide", "defend_village_selector"],
 
 	"hurry_back_to_defend_village": ["defend_village_against_increasing", "defend_village"],
@@ -81,14 +81,10 @@ Trigger.prototype.messages = {}; // story telling
 Trigger.prototype.messages["start"] = function() 
 {
 	//TriggerHelper.PushGUINotification([DEFENDER_PLAYER, INTRUDER_PLAYER], "54 B.C. All of Gaul has been subdued by Julius Caesar's Roman legionaires, known as 'The conquest of Gaul'.");
-	var cmpGUIInterface = Engine.QueryInterface(SYSTEM_ENTITY, IID_GuiInterface);
-	cmpGUIInterface.PushNotification({
-		"players": [DEFENDER_PLAYER, INTRUDER_PLAYER], 
-		"message":
-			markForTranslation("54 B.C. All of Gaul has been subdued by Julius Caesar's Roman legionaires, known as 'The conquest of Gaul'."),
-		"translateMessage": true
-		
-	});
+	PushGUINotification(
+			[DEFENDER_PLAYER, INTRUDER_PLAYER],
+			"54 B.C. All of Gaul has been subdued by Julius Caesar's Roman legionaires, known as 'The conquest of Gaul'."
+	);
 }
 
 Trigger.prototype.messages["construction_phase"] = function() 
@@ -253,7 +249,7 @@ Trigger.prototype.leaveConditions["construction_phase"] = function(cmpTrigger)
 }
 Trigger.prototype.set_construction_phase_timeout_starttime_if_undefined = function()
 {
-	if (!this.construction_phase_timeout_starttime)
+	if (this.construction_phase_timeout_starttime == undefined)
 		this.construction_phase_timeout_starttime = now();
 }
 
@@ -546,6 +542,7 @@ Trigger.prototype.intro = function(data)
 	});
 
 //	this.PushGUINotification([DEFENDER_PLAYER, INTRUDER_PLAYER],
+	/*
 	cmpGUIInterface = Engine.QueryInterface(SYSTEM_ENTITY, IID_GuiInterface);
 	cmpGUIInterface.PushNotification({
 		"players": [DEFENDER_PLAYER], 
@@ -553,6 +550,7 @@ Trigger.prototype.intro = function(data)
 		"message": markForTranslation("Gaul is a peaceful place for their inhabitants. %(animalKind)s being the exception!"),
 		"translateMessage": true
 	});
+	*/
 
 
 };
@@ -802,6 +800,11 @@ cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MIN = 1;
 cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MAX = 100; 
 cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_STEP = 1;
 
+cmpTrigger.major_enemy_attack_probability = .1;
+cmpTrigger.MAJOR_ENEMY_ATTACK_PROBABILITY_MIN = .05;
+cmpTrigger.MAJOR_ENEMY_ATTACK_PROBABILITY_MAX = .95;
+cmpTrigger.MAJOR_ENEMY_ATTACK_PROBABILITY_STEP = .0001;
+
 cmpTrigger.ENEMY_STRUCTURES_UNDESTROYABLE_COUNT = 15;
 
 cmpTrigger.all_roman_centurios_so_far_ids = []; // ids to be serializable.
@@ -919,8 +922,8 @@ cmpTrigger.is_debug = false;
 
 // STORY START
 cmpTrigger.state = "init";
-Trigger.prototype.STATE_CYCLE_DELAY = 5 * SECOND;
-cmpTrigger.DoAfterDelay(1500, "startStoryline", {});
+Trigger.prototype.STATE_CYCLE_DELAY = 7 * SECOND;
+cmpTrigger.DoAfterDelay(1.5 * SECOND, "startStoryline", {});
 
 
 
@@ -1639,7 +1642,7 @@ Trigger.prototype.random_enemy_centurio_excursion = function()
 	d = {
 		"entities": trigger_points_in_gallic_village, //<-- this is still suboptimal if the DisappearOnArrival is registered with the same event again but with different entities (overwriting the ones we registered/set here). TODO Maybe use one trigger point type of owner gaia as fixed disappear point, where units disappear if they enter its set range?
 		"players": [INTRUDER_PLAYER],
-		"maxRange": 150, // when the centurio comes in sight of the building. TODO Derive from the target entity's template?
+		"maxRange": 175, // when the centurio comes in sight of the building. TODO Derive from the target entity's template?
 		"requiredComponent": IID_UnitAI,
 		"enabled": true
 	}
@@ -2046,13 +2049,12 @@ Trigger.prototype.grant_one_time_druid_reinforcements = function()
 }	
 
 
-cmpTrigger.major_enemy_attack_probability = .1;
 Trigger.prototype.lessen_major_enemy_attack_probability = function()
 {
 	this.debug('decrease major enemy attack probability');
-	if (this.major_enemy_attack_probability > .019)
+	if (this.major_enemy_attack_probability > this.MAJOR_ENEMY_ATTACK_PROBABILITY_MIN + this.MAJOR_ENEMY_ATTACK_PROBABILITY_STEP)
 	{
-		this.major_enemy_attack_probability -= .01;
+		this.major_enemy_attack_probability -= this.MAJOR_ENEMY_ATTACK_PROBABILITY_STEP;
 	}
 	
 }
@@ -2060,9 +2062,9 @@ Trigger.prototype.lessen_major_enemy_attack_probability = function()
 Trigger.prototype.increase_major_enemy_attack_probability = function()
 {
 	this.debug('increase major enemy attack probability');
-	if (this.major_enemy_attack_probability < .9999)
+	if (this.major_enemy_attack_probability < this.MAJOR_ENEMY_ATTACK_PROBABILITY_MAX - this.MAJOR_ENEMY_ATTACK_PROBABILITY_STEP)
 	{
-		this.major_enemy_attack_probability += .01;
+		this.major_enemy_attack_probability += this.MAJOR_ENEMY_ATTACK_PROBABILITY_STEP;
 	}
 	
 }

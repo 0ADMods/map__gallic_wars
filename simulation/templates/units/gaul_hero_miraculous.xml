@@ -27,7 +27,7 @@
   <Identity>
     <Civ>gaul</Civ>
     <Classes datatype="tokens">Hero Healer Organic</Classes>
-	<GenericName>Druide Miraculous</GenericName>
+	<GenericName>Gallic Druid</GenericName>
     <SpecificName>Le Druide Galois</SpecificName>
     <Icon>units/celt_support_healer.png</Icon>
 	<Tooltip>Classes: Hero Healer.
