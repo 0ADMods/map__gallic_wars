@@ -1,7 +1,0 @@
-{
-	"name": "Jan's AI",
-	"description": "The custom Hard work AI Jan aka Radagast made for the gallic map. Do not use it for anything else.",
-	"moduleName" : "JansTMAI",
-	"constructor": "PetraBot",
-	"useShared": true
-}
