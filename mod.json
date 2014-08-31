@@ -3,7 +3,7 @@
     "version": "0.0.17",
     "label": "Gallic Wars",
     "url": "github.com/0ADMods/map__gallic_wars",
-    "description": "Niek's experimental trigger map featuring the Roman conquest of Gaul and the Gallic resistance.",
-    "dependencies": ["0ad=0.0.17"],
-    "type": "content map"
+    "description": "Fallen Empire Creations' trigger map featuring the Roman conquest of Gaul and the Gallic resistance. Part 1 of a bigger Gallic campaign.",
+    "dependencies": ["0ad"],
+    "type": "content map campaign scenario"
 }
