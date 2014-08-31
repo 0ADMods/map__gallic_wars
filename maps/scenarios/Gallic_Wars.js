@@ -387,7 +387,9 @@ Trigger.prototype.enterConditions["turn_the_tide"] = function(cmpTrigger)
 	var enemy_entities = cmpRangeMan.GetEntitiesByPlayer(INTRUDER_PLAYER);
 	var enemy_units = enemy_entities.filter(function(e) { if (Engine.QueryInterface(e, IID_UnitAI)) return true; return false; });
 	cmpTrigger.debug('Not turn the tide? own: '+ units.length + ' < 2 * enemy_units.length: ' + enemy_units.length);
-	if (units.length < enemy_units.length)
+	if (cmpTrigger.playerData[INTRUDER_PLAYER].leader && units.length < 2 * enemy_units.length)
+		return false;
+	else if (!cmpTrigger.playerData[INTRUDER_PLAYER].leader && units.length < enemy_units.length)
 		return false;
 
 	// Count active enemy attacks. If there are any active attacks, then no counter attack can be ordered.
@@ -1645,7 +1647,7 @@ Trigger.prototype.random_enemy_centurio_excursion = function()
 	//);
 	var cmpPosition = Engine.QueryInterface(chosen_target, IID_Position);
 	var pos = cmpPosition.GetPosition();
-	cmpUnitAI.WalkToPointRange(pos.x, pos.z, 0, 125, true);
+	cmpUnitAI.WalkToPointRange(pos.x, pos.z, 0, 150, true);
 	//var cmpUnitMotion = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitMotion); <-- doesn't set proper unit ai state and hence no correct animation is chosen.
 	//cmpUnitMotion.MoveToTargetRange(chosen_target, 0, 150);
 
@@ -1705,7 +1707,6 @@ Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy = function
 		var cmpUnitAi = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitAI); 
 		if (cmpUnitAi) 
 		{
-			;
 			var target_points = [this.GetTriggerPoints("I"), this.GetTriggerPoints("F")];
 			target_points = pickRandomly(target_points);
 			var target_point = pickRandomly(target_points);
@@ -2043,15 +2044,15 @@ Trigger.prototype.PerformTrade = function(currentHarbour) // <-- every gaul can 
 };
 
 
-Trigger.prototype.grant_one_time_druid_reinforcements = function()
+Trigger.prototype.grant_one_time_druid_reinforcements = function(spawn_points)
 {
-	if (random_abort(95))
-		return false;
 
 
 	// TODO Or rather use the druid for the spawn position?
 	var druid_trigger_point = cmpTrigger.GetTriggerPoints("D")[0];
-
+    if (spawn_points)
+	    druid_trigger_point = pickRandomly(spawn_points);
+    
 	var count = Math.round(10 * Math.random(), 0);
 	TriggerHelper.SpawnUnits(druid_trigger_point, "units/gaul_infantry_javelinist_a", Math.max(1, count), DEFENDER_PLAYER); 
 	
@@ -2084,8 +2085,11 @@ Trigger.prototype.increase_major_enemy_attack_probability = function()
 		
 Trigger.prototype.grant_gallic_neighbours_reinforcements = function()
 {
-	// TODO improve
-	this.grant_one_time_druid_reinforcements();
+	if (random_abort(95))
+		return false;
+	
+	this.grant_one_time_druid_reinforcements(this.GetTriggerPoints("B"));
+	return true;
 }
 
 
