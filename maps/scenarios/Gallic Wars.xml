@@ -64,7 +64,7 @@
       }
     },
     {
-      "AI": "VoidBot",
+      "AI": "void",
       "Civ": "rome",
       "Colour": {
         "b": 20,
