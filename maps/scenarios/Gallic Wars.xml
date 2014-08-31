@@ -33,8 +33,8 @@
 		</Postproc>
 	</Environment>
 	<Camera>
-		<Position x="268.814" y="102.383" z="-2.17006"/>
-		<Rotation angle="0.292862"/>
+		<Position x="350.292" y="92.7795" z="388.033"/>
+		<Rotation angle="0"/>
 		<Declination angle="0.610865"/>
 	</Camera>
 	<ScriptSettings><![CDATA[
@@ -84,7 +84,9 @@
         }
       }
     },
-    {}
+    {
+      "AI": "void"
+    }
   ],
   "Preview": "gallic_wars_sunset.jpg",
   "RevealMap": false,
