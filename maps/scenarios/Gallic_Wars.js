@@ -1232,7 +1232,7 @@ Trigger.prototype.spawn_initial_gauls = function(data)
 	// Spawn buildings and units and add to the default count.
 	var trigger_points_in_gallic_village = this.GetTriggerPoints("A");
 	
-	this.spawn_initial(this.units_to_spawn[DEFENDER_PLAYER], DEFENDER_PLAYER, trigger_points_in_gallic_village);
+	this.spawn_initial(this.units_to_spawn[DEFENDER_PLAYER], DEFENDER_PLAYER, trigger_points_in_gallic_village, true, true, undefined, undefined, {"avoid": ["Palisade"]});
 	
 
 	// Special units to keep track of individually:
@@ -1280,7 +1280,7 @@ Trigger.prototype.spawn_initial_gauls = function(data)
 	
 }
 
-Trigger.prototype.spawn_initial = function(entities_to_spawn, playerId, spawn_location_entities, allowSpawningFromBuildings = true, alternateTriggerPointAndBuildingSpawning = true, valueModificationsToApplyToExistingBuildingsCache = undefined, civ = undefined)
+Trigger.prototype.spawn_initial = function(entities_to_spawn, playerId, spawn_location_entities, allowSpawningFromBuildings = true, alternateTriggerPointAndBuildingSpawning = true, valueModificationsToApplyToExistingBuildingsCache = undefined, civ = undefined, entityClasses = undefined)
 {
 	this.playerData[playerId].initial_buildings = [];
 	this.playerData[playerId].initial_units = [];
@@ -1320,8 +1320,20 @@ Trigger.prototype.spawn_initial = function(entities_to_spawn, playerId, spawn_lo
 		// choose random spawn point within village or any gallic building:
 		var chosen_spawn_point = pickRandomly(spawn_location_entities);
 		var chosen_spawn_building = pickRandomly(this.playerData[playerId].initial_buildings);
+		if (entityClasses && entityClasses.avoid)
+		{
+			var trial_count = 10;
+			var buildingIdentity = Engine.QueryInterface(chosen_spawn_building, IID_Identity);
+			while (--trial_count > 0 && MatchesClassList(buildingIdentity.GetClassesList(), entityClasses.avoid))
+			{
+				chosen_spawn_building = pickRandomly(this.playerData[playerId].initial_buildings);
+				buildingIdentity = Engine.QueryInterface(chosen_spawn_building, IID_Identity);
+			}
+		}
 		
-		if (allowSpawningFromBuildings && chooseSpawnPointFromBuildings || !chosen_spawn_point && chosen_spawn_building)
+		var buildingIdentity = Engine.QueryInterface(chosen_spawn_building, IID_Identity);
+		if ( (allowSpawningFromBuildings && chooseSpawnPointFromBuildings || !chosen_spawn_point && chosen_spawn_building)
+				&& (entityClasses == undefined || !MatchesClassList(buildingIdentity.GetClassesList(), entityClasses.avoid)) )
 		{	
 			if (alternateTriggerPointAndBuildingSpawning)
 				chooseSpawnPointFromBuildings = false;
