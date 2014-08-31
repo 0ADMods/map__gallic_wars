@@ -800,10 +800,10 @@ cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MIN = 1;
 cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MAX = 100; 
 cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_STEP = 1;
 
-cmpTrigger.major_enemy_attack_probability = .1;
-cmpTrigger.MAJOR_ENEMY_ATTACK_PROBABILITY_MIN = .05;
-cmpTrigger.MAJOR_ENEMY_ATTACK_PROBABILITY_MAX = .95;
-cmpTrigger.MAJOR_ENEMY_ATTACK_PROBABILITY_STEP = .0001;
+cmpTrigger.major_enemy_attack_probability = .05;
+cmpTrigger.MAJOR_ENEMY_ATTACK_PROBABILITY_MIN = .01;
+cmpTrigger.MAJOR_ENEMY_ATTACK_PROBABILITY_MAX = .25;
+cmpTrigger.MAJOR_ENEMY_ATTACK_PROBABILITY_STEP = .00001;
 
 cmpTrigger.ENEMY_STRUCTURES_UNDESTROYABLE_COUNT = 15;
 
@@ -922,8 +922,8 @@ cmpTrigger.is_debug = false;
 
 // STORY START
 cmpTrigger.state = "init";
-Trigger.prototype.STATE_CYCLE_DELAY = 7 * SECOND;
-cmpTrigger.DoAfterDelay(1.5 * SECOND, "startStoryline", {});
+Trigger.prototype.STATE_CYCLE_DELAY = 5 * SECOND;
+cmpTrigger.DoAfterDelay(1.25 * SECOND, "startStoryline", {});
 
 
 
@@ -1645,7 +1645,7 @@ Trigger.prototype.random_enemy_centurio_excursion = function()
 	//);
 	var cmpPosition = Engine.QueryInterface(chosen_target, IID_Position);
 	var pos = cmpPosition.GetPosition();
-	cmpUnitAI.WalkToPointRange(pos.x, pos.z, 0, 150, true);
+	cmpUnitAI.WalkToPointRange(pos.x, pos.z, 0, 125, true);
 	//var cmpUnitMotion = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitMotion); <-- doesn't set proper unit ai state and hence no correct animation is chosen.
 	//cmpUnitMotion.MoveToTargetRange(chosen_target, 0, 150);
 
