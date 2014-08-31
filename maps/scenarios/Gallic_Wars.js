@@ -1200,6 +1200,18 @@ Trigger.prototype.give_druid_further_instructions_on_harbour_arrival = function(
 	return true;
 }
 Trigger.prototype.units_to_spawn = []; 
+Trigger.prototype.spawn_initial_trader_entities = function(data)
+{
+	// Trial & Error: Does this prevent player 3 from being defeated?
+	var units_spawned = this.spawn(this.GetTriggerPoints("C"), [this.units_to_spawn[INTRUDER_PLAYER][0]], TRADER_PLAYER);
+	for each (var unit_spawned in units_spawned)
+	{
+		var cmpPosition = Engine.QueryInterface(unit_spawned, IID_Position);
+		cmpPosition.MoveOutOfWorld();
+	}
+	
+}
+	// Spawn buildings and units and add to the default count.
 Trigger.prototype.units_to_spawn[DEFENDER_PLAYER] = [
 			{"template": "units/gaul_infantry_javelinist_a", "count": 10}
 			, {"template": "units/gaul_infantry_slinger_a", "count": 10}
@@ -1709,7 +1721,7 @@ Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy = function
     var cmpEnemyOfCenturioPosition = Engine.QueryInterface(target, IID_Position);
     var pos = cmpEnemyOfCenturioPosition.GetPosition();
 	var cmpUnitAI = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitAI);
-	cmpUnitAI.PushOrderFront("WalkAndFight", { "x": pos.x, "z": pos.z, "target": target, "force": false });
+	cmpUnitAI.PushOrderFront("WalkAndFight", { "x": pos.x, "z": pos.z, "targetClasses": {"attack": ["Hero", "Champion"]}, "force": false });
 	
 	PushGUINotification([DEFENDER_PLAYER], "Royal guard: 'The Roman Centurio is attacking our hero: " + target_cmpIdentity.GetGenericName() + "!'");
 	
@@ -2230,7 +2242,7 @@ Trigger.prototype.if_attacking_entities_arrived_at_siege_point_then_give_further
 
 	    var cmpEnemyOfRomanPosition = Engine.QueryInterface(target, IID_Position);
     	var pos = cmpEnemyOfRomanPosition.GetPosition();
-		cmpUnitAi.PushOrderFront("WalkAndFight", { "x": pos.x, "z": pos.z, "target": target, "force": false });
+		cmpUnitAi.PushOrderFront("WalkAndFight", { "x": pos.x, "z": pos.z, "targetClasses": {"attack": undefined, "avoid": undefined }, "force": false });
 	}
 }
 	
