@@ -17,8 +17,8 @@
 		<Max>600</Max>
 	</Health>
 	<Identity>
-		<Civ>Celt</Civ>
-		<SpecificName>Obelix</SpecificName>
+		<Civ>Gaul</Civ>
+		<SpecificName>Obeli</SpecificName>
 		<History>Needs history.</History>
 		<Icon>units/celt_infantry_spearman.png</Icon>
 		<Rank>Basic</Rank>

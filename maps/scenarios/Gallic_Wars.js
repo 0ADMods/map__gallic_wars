@@ -1245,7 +1245,7 @@ Trigger.prototype.spawn_initial_gauls = function(data)
 	var units_to_spawn = [
 			// heroes
 			{"template": "units/gaul_idefisk", "count": 1}
-			, {"template": "units/celt_fat_gaul", "count": 10}
+			, {"template": "units/gaul_fat", "count": 10}
 	];
 	var trigger_points_outside_gallic_village = this.GetTriggerPoints("B");
 	
@@ -1680,7 +1680,7 @@ Trigger.prototype.random_enemy_centurio_excursion = function()
 Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy = function(data)
 {
 	// No centurio that is alive and in active command?
-	if (!this.playerData[INTRUDER_PLAYER].leader)
+	if (this.playerData[INTRUDER_PLAYER].leader === undefined)
 		return ;
 
 	//if (data.triggerPoint != "K" /*&& triggerPointOwner != DEFENDER_PLAYER*/)
@@ -1690,9 +1690,6 @@ Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy = function
 			return ;
 
 	
-	if (data.added.indexOf(this.playerData[INTRUDER_PLAYER].leader) === -1)
-		return ;
-
 	var range = 100;
 	var nearby = getNearbyEnemies(this.playerData[INTRUDER_PLAYER].leader, 0, range);
 
