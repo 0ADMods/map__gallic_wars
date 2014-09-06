@@ -791,24 +791,56 @@ cmpTrigger.RegisterTrigger("OnTrainingFinished", "TrainingFinishedAction", data)
 cmpTrigger.RegisterTrigger("OnTrainingQueued", "TrainingQueuedAction", data);
 cmpTrigger.RegisterTrigger("OnTreasureCollected", "TreasureCollected", data);
 
+data = {};
+data.enabled = true;
+data.delay = 1 * SECOND; // launch cycle immediately.
+data.interval = 60 * SECOND;
+cmpTrigger.RegisterTrigger("OnInterval", "renew_stalled_attacks", data);
+
+Trigger.prototype.renew_stalled_attacks = function()
+{
+	var siege_points = this.GetTriggerPoints("J");
+	for each (var source in siege_points)
+	{
+		if (!source)
+			continue;
+
+		var rangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
+		var range_min = 0;
+		var range_max = 100;
+		var players = [INTRUDER_PLAYER];
+		var entities_nearby = rangeMan.ExecuteQuery(source, range_min, range_max, players, IID_UnitAI); //<-- only those with Identity. (Note: RangeManager seems to be C++ component/entity only.)
+		for each (var e in entities_nearby)
+		{
+			var cmpUnitAi = Engine.QueryInterface(e, IID_UnitAI);
+			if (!cmpUnitAi)
+				continue;
+			if (!cmpUnitAi.GetCurrentState().toLowerCase() == "idle")
+				continue;
+			attackNearbyEnemy(e, 0, 250);
+		}
+	}
+}
+
 
 // SpawnEnemyAndAttack steering data: (maybe changed during/by the storyline)
-cmpTrigger.enemy_attack_interval = 60 * SECOND; // every 1 minute
-cmpTrigger.ENEMY_ATTACK_INTERVAL_MIN = 1 * SECOND;
-cmpTrigger.ENEMY_ATTACK_INTERVAL_MAX = 3 * 60 * SECOND; // every 3 minutes
-cmpTrigger.ENEMY_ATTACK_INTERVAL_STEP = 2 * SECOND; // increase or decrease by 2 seconds
+cmpTrigger.enemy_attack_interval = 45 * SECOND;
+cmpTrigger.ENEMY_ATTACK_INTERVAL_MIN = 10 * SECOND;
+cmpTrigger.ENEMY_ATTACK_INTERVAL_MAX = 2 * 60 * SECOND;
+cmpTrigger.ENEMY_ATTACK_INTERVAL_STEP = 1 * SECOND; // increase or decrease by 2 seconds
 cmpTrigger.enemy_attack_unit_count = 2;
 cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MIN = 1;
-cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MAX = 100; 
+cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_MAX = 50; 
 cmpTrigger.ENEMY_ATTACK_UNIT_COUNT_STEP = 1;
 
 cmpTrigger.major_enemy_attack_probability = .05;
 cmpTrigger.MAJOR_ENEMY_ATTACK_PROBABILITY_MIN = .01;
-cmpTrigger.MAJOR_ENEMY_ATTACK_PROBABILITY_MAX = .25;
-cmpTrigger.MAJOR_ENEMY_ATTACK_PROBABILITY_STEP = .00001;
+cmpTrigger.MAJOR_ENEMY_ATTACK_PROBABILITY_MAX = .15;
+cmpTrigger.MAJOR_ENEMY_ATTACK_PROBABILITY_STEP = .0001;
 
 cmpTrigger.ENEMY_STRUCTURES_UNDESTROYABLE_COUNT = 15;
 
+cmpTrigger.is_roman_centurio_currently_near_the_gallic_village_ = false;
 cmpTrigger.all_roman_centurios_so_far_ids = []; // ids to be serializable.
 
 cmpTrigger.construction_phase_timeout_starttime = now();
@@ -1220,12 +1252,12 @@ Trigger.prototype.units_to_spawn[DEFENDER_PLAYER] = [
 			, {"template": "units/gaul_infantry_spearman_a", "count": 10}
 
 			// champions
-			, {"template": "units/gaul_champion_infantry", "count": 10}
+			, {"template": "units/gaul_champion_infantry", "count": 7}
 			, {"template": "units/gaul_champion_cavalry", "count": 10}
 
 
 			, {"template": "units/gaul_idefisk", "count": 1}
-			, {"template": "units/gaul_hero_obelisk", "count": 2}
+			, {"template": "units/gaul_hero_obelisk", "count": 1}
 ]; 
 Trigger.prototype.spawn_initial_gauls = function(data)
 {
@@ -1240,21 +1272,20 @@ Trigger.prototype.spawn_initial_gauls = function(data)
 	//var trigger_point_druid = ; 
 	//this.playerData[DEFENDER_PLAYER].druid = TriggerHelper.SpawnUnits(chosen_spawn_entity, druid.template, druid.count, DEFENDER_PLAYER)[0];
 
-	// asterisk
 	// both common units for now.
 	var units_to_spawn = [
 			// heroes
 			{"template": "units/gaul_idefisk", "count": 1}
-			, {"template": "units/gaul_fat", "count": 10}
+			, {"template": "units/gaul_fat", "count": 7}
 	];
 	var trigger_points_outside_gallic_village = this.GetTriggerPoints("B");
 	
 	this.spawn_initial(units_to_spawn, DEFENDER_PLAYER, trigger_points_outside_gallic_village);
 	 
-	// obelisk
+	// asterisk 
 	units_to_spawn = [
 			// heroes
-			{"template": "units/gaul_hero_asterisk", "count": 2}
+			{"template": "units/gaul_hero_asterisk", "count": 1}
 	];
 	
 	this.spawn_initial(units_to_spawn, DEFENDER_PLAYER, [trigger_points_outside_gallic_village[0]], false);
@@ -1634,6 +1665,7 @@ Trigger.prototype.react_if_enemy_leader_is_gone = function()
 			{
 				var cmpIdentity = Engine.QueryInterface(leader, IID_Identity);
 				PushGUINotification([DEFENDER_PLAYER], "The Enemy leader " + this.playerData[INTRUDER_PLAYER].leader_identity.GetGenericName() + " has been captured or killed.");
+				this.is_roman_centurio_currently_near_the_gallic_village = false;
 				this.isAlreadyAchieved["react_if_enemy_leader_is_gone"] = true;
 			}
 	}
@@ -1642,6 +1674,9 @@ Trigger.prototype.react_if_enemy_leader_is_gone = function()
 
 Trigger.prototype.random_enemy_centurio_excursion = function()
 {
+	if (this.is_roman_centurio_currently_near_the_gallic_village)
+		return ;
+
 	// abort chance 90 %
 	if (random_abort(.90))
 		return ;
@@ -1651,6 +1686,9 @@ Trigger.prototype.random_enemy_centurio_excursion = function()
 		return ;
 		
 	PushGUINotification([DEFENDER_PLAYER], "Gallic spy: 'The Roman Centurio is underway to have a look at our village!'");
+
+	this.launch_major_enemy_assault(); // a centurio won't go unprotected.
+	
 	var trigger_points_in_gallic_village = this.GetTriggerPoints("K");
 	var chosen_target = pickRandomly(trigger_points_in_gallic_village);
 	var cmpUnitAI = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitAI);
@@ -1683,13 +1721,19 @@ Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy = function
 	if (this.playerData[INTRUDER_PLAYER].leader === undefined)
 		return ;
 
+	if (data.removed.indexOf(this.playerData[INTRUDER_PLAYER].leader) !== -1)
+		this.is_roman_centurio_currently_near_the_gallic_village = false;
+		
 	//if (data.triggerPoint != "K" /*&& triggerPointOwner != DEFENDER_PLAYER*/)
 	// The centurio entered the range of the trigger point?
 	if (data.added.indexOf(this.playerData[INTRUDER_PLAYER].leader) === -1)
 		if (data.currentCollection.indexOf(this.playerData[INTRUDER_PLAYER].leader) === -1)
 			return ;
 
-	
+	// the centurio arrived:
+	this.is_roman_centurio_currently_near_the_gallic_village = true;
+
+
 	var range = 100;
 	var nearby = getNearbyEnemies(this.playerData[INTRUDER_PLAYER].leader, 0, range);
 
@@ -1716,13 +1760,13 @@ Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy = function
 		var cmpUnitAi = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitAI); 
 		if (cmpUnitAi) 
 		{
-			var target_points = [this.GetTriggerPoints("I"), this.GetTriggerPoints("F")];
+			var target_points = [this.GetTriggerPoints("F"), this.GetTriggerPoints("H"), this.GetTriggerPoints("F"), this.GetTriggerPoints("I")];
 			target_points = pickRandomly(target_points);
 			var target_point = pickRandomly(target_points);
-			var cmpUnitAi = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitAI);
 			var cmpPosition = Engine.QueryInterface(target_point, IID_Position);
 			var pos = cmpPosition.GetPosition();
-			cmpUnitAi.WalkToPointRange(pos.x, pos.z, 0, 10, true);
+			cmpUnitAi.WalkToPointRange(pos.x, pos.z, 0, 5, true);
+			//cmpUnitAi.PushOrderFront("WalkToPointRange", { "x": pos.x, "z": pos.z, "range_minx": 0, "range_max": 10, "force": true });
 		}
 		return;
 	}
@@ -2102,13 +2146,17 @@ Trigger.prototype.grant_gallic_neighbours_reinforcements = function()
 }
 
 
-cmpTrigger.major_enemy_attack_attacking_entities = []; 
-cmpTrigger.major_enemy_attack_entities_on_the_way = []; 
 Trigger.prototype.random_launch_major_enemy_assault = function(data)
 {
 	var cmpTrigger = Engine.QueryInterface(SYSTEM_ENTITY, IID_Trigger);
 	if (random_abort(1 - cmpTrigger.major_enemy_attack_probability))
 		return ;
+}
+
+cmpTrigger.major_enemy_attack_attacking_entities = []; 
+cmpTrigger.major_enemy_attack_entities_on_the_way = []; 
+Trigger.prototype.launch_major_enemy_assault = function()
+{
 	
 	PushGUINotification([DEFENDER_PLAYER], "Spies: 'We have spotted a major enemy assault. Are we lost?'");
 
@@ -2233,33 +2281,39 @@ Trigger.prototype.if_attacking_entities_arrived_at_siege_point_then_give_further
 		if (!cmpUnitAi.TargetIsAlive(ent))
 			continue;
 		
-		var range = 250;
-		var nearby = getNearbyEnemies(ent, 0, range);
-
-		var target = undefined;
-		var target_cmpIdentity = undefined;
-		for each (var ent in nearby)
-		{
-	        var cmpIdentity = Engine.QueryInterface(ent, IID_Identity);
-			// Don't attack possibly captured Romans: (as you might want to re-convert or free them)
-			if (!cmpIdentity || cmpIdentity.GetCiv().indexOf("rom") !== -1)
-				continue;
-			target = ent;
-			target_cmpIdentity = cmpIdentity;
-			break;
-
-		}
-
-		if (!target)
-			continue;
-
-	    var cmpEnemyOfRomanPosition = Engine.QueryInterface(target, IID_Position);
-    	var pos = cmpEnemyOfRomanPosition.GetPosition();
-		cmpUnitAi.PushOrderFront("WalkAndFight", { "x": pos.x, "z": pos.z, "targetClasses": {"attack": undefined, "avoid": undefined }, "force": false });
+	 	attackNearbyEnemy(ent, 0, 250);
 	}
 }
 	
-	
+function attackNearbyEnemy(entity, range_min, range_max)
+{
+	var cmpUnitAi = Engine.QueryInterface(entity, IID_UnitAI);
+	if (!cmpUnitAi)
+		return; 
+
+	var nearby = getNearbyEnemies(entity, range_min, range_max);
+
+	var target = undefined;
+	var target_cmpIdentity = undefined;
+	for each (var ent in nearby)
+	{
+        var cmpIdentity = Engine.QueryInterface(ent, IID_Identity);
+		// Don't attack possibly captured Romans: (as you might want to re-convert or free them)
+		if (!cmpIdentity || cmpIdentity.GetCiv().indexOf("rom") !== -1)
+			continue;
+		target = ent;
+		target_cmpIdentity = cmpIdentity;
+		break;
+
+	}
+
+	if (!target)
+		return ;
+
+    var cmpEnemyOfRomanPosition = Engine.QueryInterface(target, IID_Position);
+   	var pos = cmpEnemyOfRomanPosition.GetPosition();
+	cmpUnitAi.PushOrderFront("WalkAndFight", { "x": pos.x, "z": pos.z, "targetClasses": {"attack": undefined, "avoid": undefined }, "force": false });
+}
 
 
 function random_abort(abort_chance_percent_float_or_int)
