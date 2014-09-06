@@ -815,7 +815,7 @@ Trigger.prototype.renew_stalled_attacks = function()
 			var cmpUnitAi = Engine.QueryInterface(e, IID_UnitAI);
 			if (!cmpUnitAi)
 				continue;
-			if (!cmpUnitAi.GetCurrentState().toLowerCase() == "idle")
+			if (!cmpUnitAi.GetCurrentState().toLowerCase() == "individual.idle")
 				continue;
 			attackNearbyEnemy(e, 0, 250);
 		}
@@ -1758,7 +1758,8 @@ Trigger.prototype.if_roman_centurio_arrived_then_attack_closest_enemy = function
 		PushGUINotification([DEFENDER_PLAYER], "Secret forces: 'The enemy centurio tried to attack one of your leaders but couldn't make for one!'");
 		
 		var cmpUnitAi = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitAI); 
-		if (cmpUnitAi) 
+		//warn(cmpUnitAi.GetCurrentState());
+		if (cmpUnitAi && cmpUnitAi.GetCurrentState() != "INDIVIDUAL.WALKING") 
 		{
 			var target_points = [this.GetTriggerPoints("F"), this.GetTriggerPoints("H"), this.GetTriggerPoints("F"), this.GetTriggerPoints("I")];
 			target_points = pickRandomly(target_points);
