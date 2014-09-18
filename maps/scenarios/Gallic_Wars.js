@@ -807,7 +807,7 @@ Trigger.prototype.renew_stalled_attacks = function()
 
 		var rangeMan = Engine.QueryInterface(SYSTEM_ENTITY, IID_RangeManager);
 		var range_min = 0;
-		var range_max = 100;
+		var range_max = 50//100;
 		var players = [INTRUDER_PLAYER];
 		var entities_nearby = rangeMan.ExecuteQuery(source, range_min, range_max, players, IID_UnitAI); //<-- only those with Identity. (Note: RangeManager seems to be C++ component/entity only.)
 		for each (var e in entities_nearby)
@@ -927,7 +927,7 @@ var druid_trigger_point = cmpTrigger.GetTriggerPoints("D")[0];
 data = {
 	"entities": [druid_trigger_point],
 	"players": [DEFENDER_PLAYER],
-	"maxRange": 30,
+	"maxRange": 15,
 	"requiredComponent": IID_UnitAI,
 	"enabled": true
 }
@@ -1711,7 +1711,7 @@ Trigger.prototype.random_enemy_centurio_excursion = function()
 	//);
 	var cmpPosition = Engine.QueryInterface(chosen_target, IID_Position);
 	var pos = cmpPosition.GetPosition();
-	cmpUnitAI.WalkToPointRange(pos.x, pos.z, 0, 150, true);
+	cmpUnitAI.WalkToPointRange(pos.x, pos.z, 0, 170, true);
 	//var cmpUnitMotion = Engine.QueryInterface(this.playerData[INTRUDER_PLAYER].leader, IID_UnitMotion); <-- doesn't set proper unit ai state and hence no correct animation is chosen.
 	//cmpUnitMotion.MoveToTargetRange(chosen_target, 0, 150);
 
