@@ -1555,7 +1555,8 @@ Trigger.prototype.SpawnEnemyAndAttack = function(data)
 			continue;
 		var range_min = 0; 
 		var range_max = 1500;
-		var entities_nearby = getNearbyEnemies(ent, range_min, range_max, IID_Position);
+		//var entities_nearby = getNearbyEnemies(ent, range_min, range_max, IID_Position);
+		var entities_nearby = cmpRangeMan.GetEntitiesByPlayer(DEFENDER_PLAYER);
 		
 		var enemy_entities = [];
 		for each (var enemy in entities_nearby)
