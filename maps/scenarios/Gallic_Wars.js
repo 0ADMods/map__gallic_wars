@@ -235,7 +235,7 @@ Trigger.prototype.leaveConditions["construction_phase"] = function(cmpTrigger)
 
 	if (cmpTrigger.isAlreadyAchieved["construction_phase"] && cmpTrigger.isAlreadyAchieved["construction_phase"] === true)
 		return true;
-	if (enemy_units.length > 1.5 * units.length /*cmpTrigger.CONSTRUCTION_PHASE_TRESHOLD_ENEMY_NUMEROUS*/)
+	if (enemy_units.length > 1.25 * units.length /*cmpTrigger.CONSTRUCTION_PHASE_TRESHOLD_ENEMY_NUMEROUS*/)
 	{
 		PushGUINotification([DEFENDER_PLAYER], "Spy: 'The enemy is numerous. They are amassing near the village. We must finish our fortifications.'");
 		return true;
@@ -863,9 +863,11 @@ cmpTrigger.enemy_attack_compositions = [
 //	, composition_heroes_only
 ];
 
-Trigger.prototype.getRandomUnitCount = function()
+Trigger.prototype.getRandomUnitCount = function(max)
 {
-	return Math.round(Math.random() * this.enemy_attack_unit_count, 0);//this.ENEMY_ATTACK_UNIT_COUNT_MAX, 0);
+	if (!max)
+		max = 7;
+	return Math.min(max, Math.round(Math.random() * this.enemy_attack_unit_count, 0));//this.ENEMY_ATTACK_UNIT_COUNT_MAX, 0);
 }
 // TODO generate the below composition pool automatically from the above composition strengths.
 cmpTrigger.compositions = [
@@ -885,7 +887,6 @@ cmpTrigger.compositions = [
 		{"template": "units/{Civ}_infantry_swordsman_a", "count": cmpTrigger.getRandomUnitCount()}, 
 		{"template": "units/{Civ}_infantry_javelinist_a", "count": cmpTrigger.getRandomUnitCount()}, 
 		{"template": "units/{Civ}_infantry_spearman_a", "count": cmpTrigger.getRandomUnitCount()}, 
-		{"template": "units/{Civ}_support_healer_b", "count": Math.round(cmpTrigger.getRandomUnitCount() / 10, 0)}, 
 		{"template": "units/{Civ}_support_healer_a", "count": Math.round(cmpTrigger.getRandomUnitCount() / 10, 0)}, 
 	],
 	[
@@ -954,10 +955,13 @@ Trigger.prototype.CONSTRUCTION_PHASE_TIMEOUT = 3 * 60 * SECOND;
 cmpTrigger.is_debug = false;
 //cmpTrigger.is_debug = true;
 
+// Prevent Player 3 from being defeated immediately:
+cmpTrigger.DoAfterDelay(10, "spawn_initial_trader_entities", {}); 
+
 // STORY START
 cmpTrigger.state = "init";
-Trigger.prototype.STATE_CYCLE_DELAY = 5 * SECOND;
-cmpTrigger.DoAfterDelay(1.25 * SECOND, "startStoryline", {});
+Trigger.prototype.STATE_CYCLE_DELAY = 7 * SECOND;
+cmpTrigger.DoAfterDelay(1 * SECOND, "startStoryline", {});
 
 
 
@@ -1233,7 +1237,11 @@ Trigger.prototype.give_druid_further_instructions_on_harbour_arrival = function(
 	this.DisableTrigger("OnRange", "give_druid_further_instructions_on_harbour_arrival");
 	return true;
 }
-Trigger.prototype.units_to_spawn = []; 
+
+var g_traders = ["units/cart_ship_merchant", "units/sele_ship_merchant", "units/maur_ship_merchant", "units/iber_ship_merchant"];
+Trigger.prototype.units_to_spawn = [
+	g_traders[0] 
+]; 
 Trigger.prototype.spawn_initial_trader_entities = function(data)
 {
 	// Trial & Error: Does this prevent player 3 from being defeated?
@@ -1247,13 +1255,13 @@ Trigger.prototype.spawn_initial_trader_entities = function(data)
 }
 	// Spawn buildings and units and add to the default count.
 Trigger.prototype.units_to_spawn[DEFENDER_PLAYER] = [
-			{"template": "units/gaul_infantry_javelinist_a", "count": 10}
-			, {"template": "units/gaul_infantry_slinger_a", "count": 10}
-			, {"template": "units/gaul_infantry_spearman_a", "count": 10}
+			{"template": "units/gaul_infantry_javelinist_a", "count": 7}
+			, {"template": "units/gaul_infantry_slinger_a", "count": 5}
+			, {"template": "units/gaul_infantry_spearman_a", "count": 7}
 
 			// champions
 			, {"template": "units/gaul_champion_infantry", "count": 7}
-			, {"template": "units/gaul_champion_cavalry", "count": 10}
+			, {"template": "units/gaul_champion_cavalry", "count": 5}
 
 
 			, {"template": "units/gaul_idefisk", "count": 1}
@@ -1294,18 +1302,24 @@ Trigger.prototype.spawn_initial_gauls = function(data)
 	// shieldbearers:
 	var ent =  {"template": "units/gaul_shieldbearers", "count": 1};
 	var chosen_spawn_entity = this.GetTriggerPoints("K")[0];
-	this.playerData[DEFENDER_PLAYER].shieldbearers = TriggerHelper.SpawnUnits(chosen_spawn_entity, ent.template, ent.count, DEFENDER_PLAYER)[0];
-	this.playerData[DEFENDER_PLAYER].initial_units.push(ent);
+	var e = TriggerHelper.SpawnUnits(chosen_spawn_entity, ent.template, ent.count, DEFENDER_PLAYER)[0];
+	this.playerData[DEFENDER_PLAYER].shieldbearers = e;
+	this.playerData[DEFENDER_PLAYER].initial_units.push(e);
 
 	// chieftain:
 	var chieftain =  {"template": "units/gaul_hero_vercingetorix", "count": 1};
 	chosen_spawn_entity = this.GetTriggerPoints("K")[0];
 	this.playerData[DEFENDER_PLAYER].chieftain = TriggerHelper.SpawnUnits(chosen_spawn_entity, chieftain.template, chieftain.count, DEFENDER_PLAYER)[0];
 	this.playerData[DEFENDER_PLAYER].initial_units.push(chieftain);
-	var cmpUnitAI = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].chieftain, IID_UnitAI);
-	cmpUnitAI.PushOrderFront(
-		"Garrison", { "target": this.playerData[DEFENDER_PLAYER].shieldbearers, "force": false }
-	);
+
+	// Garrison the chieftain on top the shieldbearers:
+	if (this.playerData[DEFENDER_PLAYER].shieldbearers)
+	{
+		var cmpChieftainUnitAI = Engine.QueryInterface(this.playerData[DEFENDER_PLAYER].chieftain, IID_UnitAI);
+		cmpChieftainUnitAI.PushOrderFront(
+			"Garrison", { "target": this.playerData[DEFENDER_PLAYER].shieldbearers, "force": false }
+		);
+	}
 
 	// TODO Spawn buildings.
 	
@@ -1870,7 +1884,7 @@ Trigger.prototype.random_phoenician_trader_visit = function()
 	
 	// The trader doesn't want to enter the harbour if fighting is close. (give the player a motivation to keep the harbour area clear of fighting to increase the probability that the trader will come by.)
 	var range_min = 0; 
-	var range_max = 80; // keep  100m around the harbour free from fighting.
+	var range_max = 80; // keep the harbour free from fighting.
 	var entities_nearby = getNearbyEnemies(this.GetTriggerPoints("B")[0], range_min, range_max);
 	
 	var enemy_entities = [];
@@ -1891,7 +1905,7 @@ Trigger.prototype.random_phoenician_trader_visit = function()
 		enemy_entities.push(ent);
 	}
 	
-	var probability_of_trader_entering_harbour = .70;
+	var probability_of_trader_entering_harbour = .80;
 	if (enemy_entities.length > 0)
 	{
 		probability_of_trader_entering_harbour = .01; // => in total it initally was: .01 * .01 = 1/10000 => very seldom
@@ -1912,8 +1926,7 @@ Trigger.prototype.random_phoenician_trader_visit = function()
 	}
 	
 	var chosen_spawn_entity = pickRandomly(possible_spawn_points);
-	var traders = ["units/cart_ship_merchant", "units/sele_ship_merchant", "units/maur_ship_merchant", "units/iber_ship_merchant"];
-	var trader = TriggerHelper.SpawnUnits(chosen_spawn_entity, pickRandomly(traders), 1, TRADER_PLAYER)[0];
+	var trader = TriggerHelper.SpawnUnits(chosen_spawn_entity, pickRandomly(g_traders), 1, TRADER_PLAYER)[0];
 
 	//if (cmpPlayerManager.GetNumPlayers() < TRADER_PLAYER)
 	//	this.addPlayer(TRADER_PLAYER); // as this one is not pre-placed in the map. TODO somewhat strange result: conflict and things.
@@ -2176,27 +2189,65 @@ Trigger.prototype.launch_major_enemy_assault = function()
 		return ;
 	}
 	
+	// in formation, reusing the rally point system:
+	var cmpRallyPoint;
+	// find structure that has a RallyPoint component.
+	for (var structure of this.playerData[INTRUDER_PLAYER].initial_buildings)
+	{
+		cmpRallyPoint = Engine.QueryInterface(structure, IID_RallyPoint);
+		if (cmpRallyPoint)
+			break;
+	}
+	if (cmpRallyPoint)
+	{
+		// save previous state:
+		var positions_old = cmpRallyPoint.GetPositions();
+		var data_old = cmpRallyPoint.GetData();
+
+		cmpRallyPoint.Unset();
+		//cmpRallyPoint.Reset(); // TODO use if RallyPointRenderer should also be reset (also calls Unset()).
+			
+		var chosen_target = pickRandomly(road_trigger_points);
+		var cmpPosition = Engine.QueryInterface(chosen_target, IID_Position);
+		var pos = cmpPosition.GetPosition();
+		cmpRallyPoint.AddPosition(pos.x, pos.z);
+		
+		cmpRallyPoint.AddData({"command": "walk"/*, "targetClasses": ["Unit", "Structure"]*/});
+		
+		var commands = GetRallyPointCommands(cmpRallyPoint, entities);
+		for each(var command in commands)
+			ProcessCommand(INTRUDER_PLAYER, command);
+		
+		// restore to previous state:
+		cmpRallyPoint.Unset();
+		for (var pos_old of positions_old)
+			cmpRallyPoint.AddPosition(pos_old);
+		cmpRallyPoint.AddData(data_old);
+	}
 
 	for each (var ent in entities)
 	{
 		// treat only existing and alive units (TODO in world entities only? if garrisoned, then the position is -1).
-		if (!ent)
+		if (ent == undefined)
 			continue;
 		
 		var cmpUnitAi = Engine.QueryInterface(ent, IID_UnitAI);
 		if (!cmpUnitAi.TargetIsAlive(ent))
 			continue;
 		
-		var chosen_target = pickRandomly(road_trigger_points);
-		//cmpUnitAi.PushOrderFront(
-		//	"WalkToTargetRange", { "target": chosen_target, "min": 0, "max": 15 }
-		//);
-		
-		var cmpPosition = Engine.QueryInterface(chosen_target, IID_Position);
-		var pos = cmpPosition.GetPosition();
-		cmpUnitAi.WalkToPointRange(pos.x, pos.z, 0, 15, true);
-		//var cmpUnitMotion = Engine.QueryInterface(ent, IID_UnitMotion);
-		//cmpUnitMotion.MoveToTargetRange(chosen_target, 0, 15);
+		// if the spawned units were already sent to the target position in formation using a rally point, then skip the per-entity command.
+		if (!cmpRallyPoint) {
+			var chosen_target = pickRandomly(road_trigger_points);
+			//cmpUnitAi.PushOrderFront(
+			//	"WalkToTargetRange", { "target": chosen_target, "min": 0, "max": 15 }
+			//);
+			
+			var cmpPosition = Engine.QueryInterface(chosen_target, IID_Position);
+			var pos = cmpPosition.GetPosition();
+			cmpUnitAi.WalkToPointRange(pos.x, pos.z, 0, 15, true);
+			//var cmpUnitMotion = Engine.QueryInterface(ent, IID_UnitMotion);
+			//cmpUnitMotion.MoveToTargetRange(chosen_target, 0, 15);
+		}
 		
 		if (cmpTrigger.major_enemy_attack_attacking_entities.indexOf(ent) === -1)
 			cmpTrigger.major_enemy_attack_entities_on_the_way.push(ent); 

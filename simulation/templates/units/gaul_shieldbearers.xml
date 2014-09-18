@@ -28,14 +28,6 @@
     <Hack>6.0</Hack>
     <Pierce>20.0</Pierce>
   </Armour>
-  <Attack>
-    <Melee>
-      	<Crush>20.0</Crush>
-    </Melee>
-    <Charge>
-      	<Crush>100.0</Crush>
-    </Charge>
-  </Attack>
   <Cost>
     <BuildTime>1</BuildTime>
 	<Population>2</Population><!-- as the 2 bearers are props and not visibly garrisoned to propagate the move animation state properly, 2 population is required. -->
